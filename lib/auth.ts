@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 
 // Minimal credentials provider restricted to a single user.
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || undefined,
   session: { strategy: "jwt" },
   providers: [
     Credentials({

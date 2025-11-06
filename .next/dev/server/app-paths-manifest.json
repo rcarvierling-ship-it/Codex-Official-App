@@ -1,15 +1,5 @@
 {
-  "/(app)/activity/page": "app/(app)/activity/page.js",
-  "/(app)/admin/settings/page": "app/(app)/admin/settings/page.js",
-  "/(app)/admin/users/page": "app/(app)/admin/users/page.js",
-  "/(app)/analytics/page": "app/(app)/analytics/page.js",
-  "/(app)/announcements/page": "app/(app)/announcements/page.js",
-  "/(app)/approvals/page": "app/(app)/approvals/page.js",
   "/(app)/dashboard/page": "app/(app)/dashboard/page.js",
-  "/(app)/events/[id]/page": "app/(app)/events/[id]/page.js",
-  "/(app)/events/page": "app/(app)/events/page.js",
-  "/(app)/requests/page": "app/(app)/requests/page.js",
   "/admin/page": "app/admin/page.js",
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
   "/page": "app/page.js"
 }

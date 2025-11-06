@@ -38,9 +38,21 @@ export async function middleware(request: NextRequest) {
   }
 
   // Get token from NextAuth
+  const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+  if (!secret) {
+    // In production, we need a secret. In dev, allow fallback.
+    if (process.env.NODE_ENV === "production") {
+      console.error("[middleware] Missing NEXTAUTH_SECRET or AUTH_SECRET in production");
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+  }
+  
   const token = await getToken({ 
     req: request, 
-    secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "dev-secret-change-in-production" 
+    secret: secret || "dev-secret-change-in-production" 
   });
 
   // If no token, redirect to login
