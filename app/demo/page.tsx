@@ -1,9 +1,9 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import { addDays, format, isWithinInterval } from "date-fns";
+import { format, addDays, isWithinInterval } from "date-fns";
 import Link from "next/link";
-import { useMemo } from "react";
-
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,403 +12,801 @@ import {
   personaOptions,
   useDemoStore,
 } from "./_state/demoStore";
-
-const overviewKpis = [
-  { label: "Total Users", value: "1,247", delta: "+12%" },
-  { label: "Active Events", value: "89", delta: "+8%" },
-  { label: "Assignments", value: "342", delta: "+15%" },
-  { label: "Coverage Rate", value: "94%", delta: "+5%" },
-];
-
-const rosterPreview = [
-  { number: " #23", name: "Michael Jordan", position: "Guard · Elite" },
-  { number: " #11", name: "Kobe Bryant", position: "Guard · Varsity" },
-  { number: " #35", name: "Kevin Durant", position: "Forward · Varsity" },
-  { number: " #3", name: "Dwyane Wade", position: "Guard · Varsity" },
-  { number: " #14", name: "Sabrina Ionescu", position: "Guard · Varsity" },
-];
-
-const schoolAnalytics = [
-  { label: "Total Teams", value: "12" },
-  { label: "Student Athletes", value: "156" },
-  { label: "Upcoming Events", value: "48" },
-  { label: "Pending Approvals", value: "3" },
-];
-
 export default function DemoOverviewPage() {
   const { toast } = useToast();
-  const events = useDemoStore((state) => state.events);
-  const teams = useDemoStore((state) => state.teams);
-  const requests = useDemoStore((state) => state.requests);
-  const activity = useDemoStore((state) => state.activity);
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsRoleDropdownOpen(false);
+      }
+    };
+    if (isRoleDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isRoleDropdownOpen]);
+  
+  const events = useDemoStore((state) => state.events) ?? [];
+  const requests = useDemoStore((state) => state.requests) ?? [];
+  const assignments = useDemoStore((state) => state.assignments) ?? [];
+  const activity = useDemoStore((state) => state.activity) ?? [];
+  const users = useDemoStore((state) => state.users) ?? [];
+  const leagues = useDemoStore((state) => state.leagues) ?? [];
+  const schools = useDemoStore((state) => state.schools) ?? [];
+  const teams = useDemoStore((state) => state.teams) ?? [];
+  const venues = useDemoStore((state) => state.venues) ?? [];
   const currentPersona = useDemoStore((state) => state.currentPersona);
   const currentRole = useDemoStore((state) => state.currentRole);
+  const setPersona = useDemoStore((state) => state.setPersona);
   const approveRequest = useDemoStore((state) => state.approveRequest);
   const declineRequest = useDemoStore((state) => state.declineRequest);
-  const setPersona = useDemoStore((state) => state.setPersona);
 
-  const personaMeta = personaOptions.find(
-    (persona) => persona.label === currentPersona,
-  );
+  const personaMeta = personaOptions.find(p => p.label === currentPersona);
+
+  const handleSetPersona = (personaLabel: string) => {
+    setPersona(personaLabel);
+    setIsRoleDropdownOpen(false);
+  };
 
   const pendingRequests = useMemo(
-    () => requests.filter((request) => request.status === "PENDING").slice(0, 4),
-    [requests],
+    () => (requests ?? []).filter((r) => r.status === "PENDING").slice(0, 4),
+    [requests]
   );
-
-  const canApprove = ["SUPER_ADMIN", "ADMIN", "AD"].includes(currentRole);
 
   const upcomingEvents = useMemo(() => {
     const now = new Date();
-    return [...events]
-      .filter((event) =>
-        isWithinInterval(new Date(event.start), {
-          start: now,
-          end: addDays(now, 7),
-        }),
-      )
-      .sort(
-        (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
-      )
-      .slice(0, 5);
+    return [...(events ?? [])]
+      .filter((e) => isWithinInterval(new Date(e.start), { start: now, end: addDays(now, 30) }))
+      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+      .slice(0, 6);
   }, [events]);
 
-  const recentActivity = activity.slice(0, 6);
+  const recentActivity = (activity ?? []).slice(0, 3);
+
+  const canApprove = ["SUPER_ADMIN", "ADMIN", "AD"].includes(currentRole);
+  
+  const handleApproveRequest = (id: string) => {
+    if (!canApprove) {
+      toast({ title: "Requires AD access", description: "Switch to a School Admin or Athletic Director persona to approve." });
+      return;
+    }
+    approveRequest(id);
+    toast({ title: "Request approved", description: "Event now has confirmed coverage." });
+  };
+
+  const handleDeclineRequest = (id: string) => {
+    if (!canApprove) {
+      toast({ title: "Requires AD access", description: "Switch to a School Admin or Athletic Director persona to decline." });
+      return;
+    }
+    declineRequest(id);
+    toast({ title: "Request declined", description: "The requester was notified immediately." });
+  };
 
   return (
-    <div className="space-y-10">
-      <header className="space-y-4">
-        <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--accent))]">
-          Demo overview
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Run leagues, schools, and officials from one command center.
+    <div className="min-h-screen bg-background p-6 space-y-8">
+      {/* Role Selector */}
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold flex items-center gap-2">
+          <span>Select Role to Explore</span>
         </h1>
-        <p className="max-w-3xl text-sm text-muted-foreground">
-          Switch personas to preview how athletic directors, school admins,
-          officials, and coaches experience The Official App without touching your live data.
+        <p className="text-sm text-muted-foreground">
+          Switch between different user perspectives to see role-specific features
         </p>
-      </header>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {overviewKpis.map((kpi) => (
-          <Card
-            key={kpi.label}
-            className="border border-[hsl(var(--accent)/0.3)] bg-card/80"
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+            className="w-full rounded-lg border-2 border-emerald-500/50 bg-card px-4 py-3 text-left flex items-center justify-between hover:border-emerald-500 transition-colors"
           >
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                  {kpi.label}
-                </CardTitle>
-                <p className="mt-2 text-3xl font-semibold text-foreground">
-                  {kpi.value}
-                </p>
-              </div>
-              <span className="rounded-full bg-[hsl(var(--accent)/0.2)] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[hsl(var(--accent))]">
-                {kpi.delta}
-              </span>
-            </CardHeader>
-          </Card>
-        ))}
-      </section>
+            <div className="flex items-center gap-3">
+              <span className="text-foreground font-medium">{currentPersona}</span>
+              <span className="text-muted-foreground">— {personaMeta?.summary}</span>
+            </div>
+            <svg className="w-5 h-5 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {isRoleDropdownOpen && (
+            <div className="absolute z-50 w-full mt-2 rounded-lg border bg-card shadow-lg">
+              {personaOptions.map((persona) => (
+                <button
+                  key={persona.label}
+                  onClick={() => handleSetPersona(persona.label)}
+                  className="w-full px-4 py-3 text-left hover:bg-muted flex items-center justify-between"
+                >
+                  <div>
+                    <div className="font-medium text-foreground">{persona.label}</div>
+                    <div className="text-sm text-muted-foreground">{persona.summary}</div>
+                  </div>
+                  {currentPersona === persona.label && (
+                    <span className="text-emerald-500">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
-      <section className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
+      {/* Role-Specific Content */}
+      {currentPersona === 'School Admin' && (
+        <SchoolAdminDashboard
+          teams={teams}
+          schools={schools}
+          pendingRequests={pendingRequests}
+          upcomingEvents={upcomingEvents}
+          recentActivity={recentActivity}
+          users={users}
+          approveRequest={handleApproveRequest}
+          declineRequest={handleDeclineRequest}
+          canApprove={canApprove}
+        />
+      )}
+
+      {currentPersona === 'League Admin' && (
+        <LeagueAdminDashboard
+          leagues={leagues}
+          events={upcomingEvents}
+          assignments={assignments}
+          recentActivity={recentActivity}
+          users={users}
+        />
+      )}
+
+      {currentPersona === 'Coach' && (
+        <CoachDashboard
+          events={upcomingEvents}
+          teams={teams}
+          requests={requests}
+          recentActivity={recentActivity}
+          users={users}
+        />
+      )}
+
+      {currentPersona === 'Athletic Director' && (
+        <AthleticDirectorDashboard
+          events={upcomingEvents}
+          requests={pendingRequests}
+          teams={teams}
+          assignments={assignments}
+          recentActivity={recentActivity}
+          approveRequest={handleApproveRequest}
+          declineRequest={handleDeclineRequest}
+          canApprove={canApprove}
+        />
+      )}
+
+      {currentPersona === 'Official' && (
+        <OfficialDashboard
+          events={upcomingEvents}
+          assignments={assignments}
+          recentActivity={recentActivity}
+        />
+      )}
+
+      {/* Waitlist Feature - Always visible */}
+      <Card className="flex items-center justify-between bg-card/80 px-6 py-8 border-emerald-500/30">
+        <div>
+          <h3 className="text-xl font-semibold text-foreground">Ready to get started?</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Join the waitlist to be among the first to deploy The Official App.
+          </p>
+        </div>
+        <Button
+          asChild
+          className="bg-emerald-500 hover:bg-emerald-600 text-white"
+        >
+          <Link href="/#waitlist">Join the Waitlist</Link>
+        </Button>
+      </Card>
+    </div>
+  );
+}
+
+// School Admin Dashboard
+function SchoolAdminDashboard({
+  teams,
+  schools,
+  pendingRequests,
+  upcomingEvents,
+  recentActivity,
+  users,
+  approveRequest,
+  declineRequest,
+  canApprove,
+}: any) {
+  const officials = (users ?? []).filter((u: any) => u.role === 'OFFICIAL');
+  return (
+    <>
+      <div className="grid gap-6 lg:grid-cols-3">
         <Card className="bg-card/80">
           <CardHeader>
-            <CardTitle>Select role to explore</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Persona switcher updates actions across the demo instantly.
-            </p>
+            <CardTitle className="flex items-center gap-2">
+              <span>Teams Overview</span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {personaOptions.map((persona) => {
-                const isActive = persona.label === currentPersona;
-                return (
-                  <Badge
-                    key={persona.label}
-                    role="button"
-                    tabIndex={0}
-                    aria-pressed={isActive}
-                    onClick={() => setPersona(persona.label)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setPersona(persona.label);
-                      }
-                    }}
-                    className={
-                      isActive
-                        ? "cursor-pointer border border-[hsl(var(--accent)/0.4)] bg-[hsl(var(--accent)/0.15)] text-[hsl(var(--accent))]"
-                        : "cursor-pointer border border-border/60 bg-background/60 text-muted-foreground hover:border-[hsl(var(--accent)/0.3)] hover:text-[hsl(var(--accent))]"
-                    }
-                  >
-                    {persona.label}
-                  </Badge>
-                );
-              })}
+            <div>
+              <div className="text-3xl font-semibold text-emerald-500">8</div>
+              <div className="text-sm text-muted-foreground">Active Teams</div>
             </div>
-            {personaMeta ? (
-              <div className="space-y-3 rounded-xl border border-border/60 bg-background/70 p-4">
-                <p className="text-sm font-semibold text-foreground">
-                  {personaMeta.summary}
-                </p>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  {personaMeta.highlights.map((item) => (
-                    <li key={item} className="flex gap-2">
-                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[hsl(var(--accent))]" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+            <div className="space-y-2">
+              {teams.slice(0, 3).map((team: any) => (
+                <div key={team.id} className="rounded-lg border bg-background/60 p-3">
+                  <div className="font-medium text-foreground">{team.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {schools.find((s: any) => s.id === team.schoolId)?.mascot || 'Team'}
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card/80">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Teams overview</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              {teams.length} active teams
-            </p>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>Team Roster</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {teams.slice(0, 12).map((team) => (
-              <span
-                key={team.id}
-                className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs text-muted-foreground hover:border-[hsl(var(--accent)/0.4)] hover:text-[hsl(var(--accent))]"
-              >
-                {team.name}
-              </span>
-            ))}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
-        <Card className="bg-card/80">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Team roster preview</CardTitle>
-            <span className="text-xs text-muted-foreground">
-              Demo only · actions disabled
-            </span>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {rosterPreview.map((player) => (
-              <div
-                key={player.name}
-                className="flex items-center justify-between rounded-xl border border-border/60 bg-background/60 px-4 py-3 text-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold text-[hsl(var(--accent))]">
-                    {player.number}
-                  </span>
+          <CardContent className="space-y-2">
+            {[
+              { number: "#23", name: "Michael Jordan", position: "Guard • 12th" },
+              { number: "#10", name: "Kobe Bryant", position: "Guard • 11th" },
+              { number: "#32", name: "Magic Johnson", position: "Forward • 12th" },
+              { number: "#33", name: "Larry Bird", position: "Forward • 11th" },
+            ].map((player, i) => (
+              <div key={i} className="rounded-lg border bg-background/60 p-3">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-emerald-500">{player.number}</span>
                   <span className="text-foreground">{player.name}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {player.position}
-                </span>
+                <div className="text-xs text-muted-foreground">{player.position}</div>
               </div>
             ))}
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/80">
-          <CardHeader>
-            <CardTitle>Upcoming events</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Next 7 days across the league
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {upcomingEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No events scheduled in the next week.
-              </p>
-            ) : (
-              upcomingEvents.map((event) => (
-                <div
-                  key={event.id}
-                  className="rounded-xl border border-border/50 bg-background/60 p-3 text-sm"
-                >
-                  <p className="font-semibold text-foreground">{event.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(event.start), "EEE, MMM d · h:mm a")} ·{" "}
-                    {event.sport} · {event.level}
-                  </p>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
-        <Card className="bg-card/80">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Schedule approvals</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-[hsl(var(--accent)/0.3)] text-xs"
-              asChild
-            >
-              <Link href="/demo/approvals">Open approvals</Link>
+            <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white mt-2">
+              <span className="mr-2">+</span> Add Player
             </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {pendingRequests.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                All requests are up to date.
-              </p>
-            ) : (
-              pendingRequests.map((request) => {
-                const event = events.find((e) => e.id === request.eventId);
-                return (
-                  <div
-                    key={request.id}
-                    className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {event?.title ?? "Unknown event"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Requested{" "}
-                          {format(
-                            new Date(request.submittedAt),
-                            "MMM d · h:mm a",
-                          )}
-                        </p>
-                      </div>
-                      <Badge className="bg-[hsl(var(--accent)/0.2)] text-[hsl(var(--accent))]">
-                        Pending
-                      </Badge>
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {request.message ?? "No message provided."}
-                    </p>
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        size="sm"
-                        className="bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"
-                        disabled={!canApprove}
-                        onClick={() => {
-                          if (!canApprove) {
-                            toast({
-                              title: "Requires AD access",
-                              description:
-                                "Switch to a School Admin or Athletic Director persona to approve.",
-                            });
-                            return;
-                          }
-                          approveRequest(request.id);
-                          toast({
-                            title: "Request approved",
-                            description: `${event?.title ?? "Event"} now has confirmed coverage.`,
-                          });
-                        }}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-red-500/40 text-red-300 hover:bg-red-500/10"
-                        disabled={!canApprove}
-                        onClick={() => {
-                          if (!canApprove) {
-                            toast({
-                              title: "Requires AD access",
-                              description:
-                                "Switch to a School Admin or Athletic Director persona to decline.",
-                            });
-                            return;
-                          }
-                          declineRequest(request.id);
-                          toast({
-                            title: "Request declined",
-                            description: "The requester was notified immediately.",
-                          });
-                        }}
-                      >
-                        Deny
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
           </CardContent>
         </Card>
 
         <Card className="bg-card/80">
           <CardHeader>
-            <CardTitle>School analytics</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <span>Schedule Approvals</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            {schoolAnalytics.map((metric) => (
-              <div
-                key={metric.label}
-                className="rounded-xl border border-border/60 bg-background/60 px-4 py-3"
-              >
-                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                  {metric.label}
-                </p>
-                <p className="mt-2 text-xl font-semibold text-foreground">
-                  {metric.value}
-                </p>
+          <CardContent className="space-y-3">
+            {pendingRequests.slice(0, 1).map((req: any) => {
+              const event = upcomingEvents.find((e: any) => e.id === req.eventId);
+              return (
+                <div key={req.id} className="rounded-lg border bg-background/60 p-3">
+                  <div className="font-medium text-foreground">{event?.title || 'Warriors vs Eagles'}</div>
+                  <div className="text-xs text-muted-foreground">Requested by Coach Smith</div>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      size="sm"
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white flex-1"
+                      onClick={() => approveRequest(req.id)}
+                      disabled={!canApprove}
+                    >
+                      ✓ Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => declineRequest(req.id)}
+                      disabled={!canApprove}
+                    >
+                      ✕ Deny
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="bg-card/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span>Officials Pool</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            {officials.slice(0, 6).map((o: any) => (
+              <div key={o.id} className="rounded-lg border bg-background/60 p-3">
+                <div className="font-medium text-foreground">{o.name}</div>
+                <div className="text-xs text-muted-foreground">{o.sports?.join(', ') || 'Multi-sport'}</div>
+                <div className="mt-1 text-xs text-muted-foreground">Avail: {o.availability?.join(', ') || '—'}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span>School Analytics</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-semibold text-emerald-500">12</div>
+              <div className="text-xs text-muted-foreground">Total Teams</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-semibold text-emerald-500">156</div>
+              <div className="text-xs text-muted-foreground">Student Athletes</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-semibold text-orange-500">48</div>
+              <div className="text-xs text-muted-foreground">Upcoming Events</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-semibold text-orange-500">3</div>
+              <div className="text-xs text-muted-foreground">Pending Approvals</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <RecentActivitySection activity={recentActivity} />
+    </>
+  );
+}
+
+// League Admin Dashboard
+function LeagueAdminDashboard({ leagues, events, assignments, recentActivity, users }: any) {
+  const officials = (users ?? []).filter((u: any) => u.role === 'OFFICIAL');
+  return (
+    <>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="bg-card/80">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>My Leagues</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {leagues.slice(0, 3).map((league: any) => (
+              <div key={league.id} className="rounded-lg border bg-background/60 p-4 relative">
+                <div className="font-medium text-foreground">{league.name}</div>
+                <div className="text-sm text-muted-foreground">Basketball • Fall 2024 • Varsity</div>
+                <div className="flex gap-2 mt-2">
+                  <Badge variant="outline" className="text-xs">{league.region}</Badge>
+                  <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs">Verified</Badge>
+                </div>
+                <div className="absolute top-3 right-3">
+                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              </div>
+            ))}
+            <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
+              + Create New League
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/80">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>Official Assignments</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {events.slice(0, 3).map((event: any) => (
+              <div key={event.id} className="rounded-lg border bg-background/60 p-4">
+                <div className="font-medium text-foreground">{event.title}</div>
+                <div className="text-sm text-muted-foreground">
+                  {format(new Date(event.start), "MMM d, yyyy")} • Needs 2 officials
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white">Assign Official</Button>
+                  <Button size="sm" variant="outline">View Requests</Button>
+                </div>
               </div>
             ))}
           </CardContent>
         </Card>
-      </section>
+      </div>
 
-      <section className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
+      <Card className="bg-card/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span>Officials Pool</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-3">
+            {officials.slice(0, 8).map((o: any) => (
+              <div key={o.id} className="rounded-lg border bg-background/60 p-3">
+                <div className="font-medium text-foreground">{o.name}</div>
+                <div className="text-xs text-muted-foreground">{o.sports?.join(', ') || 'Multi-sport'}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span>League Analytics</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-semibold text-emerald-500">24</div>
+              <div className="text-xs text-muted-foreground">Participating Schools</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-semibold text-emerald-500">89</div>
+              <div className="text-xs text-muted-foreground">Total Events</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-semibold text-emerald-500">142</div>
+              <div className="text-xs text-muted-foreground">Officials Assigned</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-semibold text-emerald-500">$18.5K</div>
+              <div className="text-xs text-muted-foreground">Total Payments</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <RecentActivitySection activity={recentActivity} />
+    </>
+  );
+}
+
+// Coach Dashboard
+function CoachDashboard({ events, teams, requests, recentActivity, users }: any) {
+  const officials = (users ?? []).filter((u: any) => u.role === 'OFFICIAL');
+  return (
+    <>
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card className="bg-card/80">
           <CardHeader>
-            <CardTitle>Recent activity</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <span>Team Schedule</span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {recentActivity.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Interact with the demo to populate the log.
-              </p>
-            ) : (
-              recentActivity.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="rounded-xl border border-border/60 bg-background/60 px-4 py-3 text-sm"
-                >
-                  <p className="text-foreground">{entry.message}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(entry.timestamp), "MMM d · h:mm a")}
-                  </p>
+            {events.slice(0, 5).map((event: any) => (
+              <div key={event.id} className="rounded-lg border bg-background/60 p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">{event.title}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {format(new Date(event.start), "MMM d, yyyy 'at' h:mm a")}
+                  </div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                    <span>📍</span>
+                    <span>Central High School Gym</span>
+                  </div>
                 </div>
-              ))
-            )}
+                <button className="p-2 hover:bg-muted rounded">
+                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
+            ))}
           </CardContent>
         </Card>
-        <Card className="flex items-center justify-between bg-card/80 px-6 py-8">
-          <div>
-            <h3 className="text-xl font-semibold text-foreground">
-              Ready to get started?
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Join the waitlist to be among the first to deploy The Official App.
-            </p>
-          </div>
-          <Button
-            asChild
-            className="bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"
-          >
-            <Link href="/#waitlist">Join the Waitlist</Link>
-          </Button>
+
+        <Card className="bg-card/80">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>Communication</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-lg border bg-background/60 p-3">
+              <div className="text-xs text-muted-foreground mb-1">Message from Official</div>
+              <div className="font-medium text-foreground">Re: Warriors vs Eagles game</div>
+              <div className="text-sm text-muted-foreground mt-1">"Confirming I'll be there 30 min before tip-off."</div>
+            </div>
+            <div className="rounded-lg border bg-background/60 p-3">
+              <div className="text-xs text-muted-foreground mb-1">League Announcement</div>
+              <div className="font-medium text-foreground">League Admin • 2h ago</div>
+              <div className="text-sm text-muted-foreground mt-1">"Playoff schedule has been updated. Please review..."</div>
+            </div>
+            <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
+              <span className="mr-2">✈</span> New Message
+            </Button>
+          </CardContent>
         </Card>
-      </section>
-    </div>
+      </div>
+
+      <Card className="bg-card/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span>My Team Roster</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { number: "#23", name: "Michael Jordan", position: "Guard" },
+              { number: "#10", name: "Kobe Bryant", position: "Guard" },
+              { number: "#34", name: "Shaquille O'Neal", position: "Center" },
+              { number: "#24", name: "LeBron James", position: "Forward" },
+              { number: "#32", name: "Magic Johnson", position: "Forward" },
+              { number: "#30", name: "Stephen Curry", position: "Guard" },
+              { number: "#33", name: "Larry Bird", position: "Forward" },
+              { number: "#35", name: "Kevin Durant", position: "Forward" },
+            ].map((player, i) => (
+              <div key={i} className="rounded-lg border bg-background/60 p-3 text-center">
+                <div className="text-2xl font-semibold text-emerald-500">{player.number}</div>
+                <div className="text-sm font-medium text-foreground mt-1">{player.name}</div>
+                <div className="text-xs text-muted-foreground">{player.position}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span>Officials Pool</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-3">
+            {officials.slice(0, 8).map((o: any) => (
+              <div key={o.id} className="rounded-lg border bg-background/60 p-3 text-center">
+                <div className="font-medium text-foreground">{o.name}</div>
+                <div className="text-xs text-muted-foreground">{o.sports?.[0] || 'Official'}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <RecentActivitySection activity={recentActivity} />
+    </>
+  );
+}
+
+// Athletic Director Dashboard
+function AthleticDirectorDashboard({
+  events,
+  requests,
+  teams,
+  assignments,
+  recentActivity,
+  approveRequest,
+  declineRequest,
+  canApprove,
+}: any) {
+  return (
+    <>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="bg-card/80">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>Event Approvals</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {events.slice(0, 4).map((event: any) => (
+              <div key={event.id} className="rounded-lg border bg-background/60 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-medium text-foreground">{event.title}</div>
+                  <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs">published</Badge>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {format(new Date(event.start), "MMM d, yyyy")} • $75
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                    ✓ Approve
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <span className="mr-1">📄</span> Edit
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/80">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>Official Payments</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[
+              { name: "John Doe", event: "Warriors vs Eagles", amount: "$75", status: "pending" },
+              { name: "Jane Smith", event: "Lions vs Tigers", amount: "$60", status: "paid" },
+              { name: "Mike Johnson", event: "Spartans vs Trojans", amount: "$65", status: "pending" },
+            ].map((payment, i) => (
+              <div key={i} className="rounded-lg border bg-background/60 p-3 flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-foreground">{payment.name}</div>
+                  <div className="text-sm text-muted-foreground">{payment.event}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-foreground">{payment.amount}</div>
+                  {payment.status === 'paid' ? (
+                    <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs">paid</Badge>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">pending</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="bg-card/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span>Coach Assignments</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-3">
+            {teams.slice(0, 4).map((team: any) => (
+              <div key={team.id} className="rounded-lg border bg-background/60 p-3 text-center">
+                <div className="font-medium text-foreground">{team.name}</div>
+                <div className="text-sm text-muted-foreground mt-1">Coach: Assigned</div>
+                <Button size="sm" variant="outline" className="w-full mt-2">
+                  Assign Coach
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <RecentActivitySection activity={recentActivity} />
+    </>
+  );
+}
+
+// Official Dashboard
+function OfficialDashboard({ events, assignments, recentActivity }: any) {
+  return (
+    <>
+      <Card className="bg-card/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span>Available Events</span>
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">Browse and request to work upcoming games</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            {events.slice(0, 6).map((event: any) => (
+              <div key={event.id} className="rounded-lg border bg-background/60 p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <Badge variant="outline" className="text-xs">Varsity</Badge>
+                </div>
+                <div className="font-medium text-foreground mb-2">{event.title}</div>
+                <div className="space-y-1 text-xs text-muted-foreground mb-3">
+                  <div className="flex items-center gap-1">
+                    <span>🏀</span> <span>Basketball • Varsity</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span>📅</span> <span>{format(new Date(event.start), "MMM d, yyyy 'at' h:mm a")}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span>📍</span> <span>Central High School Gym</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-emerald-500 font-semibold">$75/game</div>
+                  <div className="text-xs text-muted-foreground">2 officials needed</div>
+                </div>
+                <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
+                  Request to Work
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="bg-card/80">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>My Notifications</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border bg-background/60 p-8 text-center text-muted-foreground">
+              No notifications
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/80">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>Submit Game Report</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Event</label>
+              <select className="w-full rounded-lg border bg-background px-3 py-2">
+                <option>Select completed event</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Report Notes</label>
+              <textarea
+                className="w-full rounded-lg border bg-background px-3 py-2 min-h-[100px]"
+                placeholder="Enter game details, scores, incidents..."
+              />
+            </div>
+            <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
+              <span className="mr-2">✈</span> Submit Report
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <RecentActivitySection activity={recentActivity} />
+    </>
+  );
+}
+
+// Recent Activity Component
+function RecentActivitySection({ activity }: any) {
+  const roleTags: Record<string, string> = {
+    'New schedule request received': 'School Admin',
+    'Event approved successfully': 'Athletic Director',
+    'Official assigned to event': 'League Admin',
+  };
+
+  return (
+    <Card className="bg-card/80">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <span>Recent Activity</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {activity.map((entry: any) => (
+          <div key={entry.id} className="rounded-lg border bg-background/60 p-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <span className="text-emerald-500">🔔</span>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-foreground">{entry.message}</div>
+                <div className="text-xs text-muted-foreground">
+                  {format(new Date(entry.timestamp), "MMM d, yyyy 'at' h:mm a")}
+                </div>
+              </div>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              {roleTags[entry.message] || 'System'}
+            </Badge>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }

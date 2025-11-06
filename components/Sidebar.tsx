@@ -8,36 +8,23 @@ import { getNavForRole, normalizeRole, type Role } from "@/lib/nav";
 import { mapNavItemsToDemo } from "@/lib/demo-nav";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { useDemoStore } from "@/app/demo/_state/demoStore";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 type SidebarVariant = "app" | "demo";
 
 type SidebarProps = {
-  initialRole?: Role;
+  role?: Role;
   variant?: SidebarVariant;
   title?: string;
 };
 
-function mapPath(variant: SidebarVariant, href: string) {
-  if (variant === "demo") {
-    return mapNavItemsToDemo([{ label: "", href }])[0]?.href ?? null;
-  }
-  return href;
-}
-
 export function Sidebar({
-  initialRole,
+  role: providedRole,
   variant = "app",
   title = variant === "demo" ? "Demo" : "Navigation",
 }: SidebarProps) {
   const pathname = usePathname() ?? "/";
-  const demoRole = useDemoStore((state) => state.currentRole);
-  const role = variant === "demo" ? demoRole : initialRole;
+  const role = providedRole;
   const [open, setOpen] = useState(false);
 
   const navItems = useMemo(() => {
@@ -74,19 +61,20 @@ export function Sidebar({
   );
 
   return (
-    <div className="w-full rounded-3xl border border-border/60 bg-card/50 p-4 lg:w-64 lg:shrink-0 lg:border-transparent lg:bg-transparent lg:p-0">
-      <div className="lg:hidden">
+    <>
+      {/* Mobile sidebar */}
+      <div className="lg:hidden border-b border-border/60 bg-card/50 p-4">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button
               variant="outline"
               className="w-full border-border/70 text-sm text-muted-foreground"
             >
-              Open {title}
+              ☰ Menu
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 bg-background text-foreground">
-            <div className="space-y-4">
+            <div className="space-y-4 pt-4">
               <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--accent))]">
                 {title}
               </p>
@@ -95,12 +83,13 @@ export function Sidebar({
           </SheetContent>
         </Sheet>
       </div>
-      <aside className="hidden lg:flex lg:flex-col lg:gap-4">
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:border-r lg:border-border/60 lg:bg-card/30 lg:p-6 lg:gap-6">
         <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--accent))]">
           {title}
         </p>
         {navList}
       </aside>
-    </div>
+    </>
   );
 }

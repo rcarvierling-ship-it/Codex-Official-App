@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDemoStore } from "@/app/demo/_state/demoStore";
+import { useDemoStore } from "@demo/_state/demoStore";
 
 export default function DemoProfilePage() {
   const activeUserId = useDemoStore((state) => state.activeUserId);

@@ -2,19 +2,16 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "./theme-toggle";
-
-const navLinks = [
-  { href: "/demo", label: "Demo" },
-  { href: "/#waitlist", label: "Join Waitlist" },
-];
+import { DEMO_ENABLED } from "@lib/demoFlag";
 
 export function Navbar() {
+  const navLinks = [
+    ...(DEMO_ENABLED ? [{ href: "/demo", label: "Demo" }] : []),
+    { href: "/#waitlist", label: "Join Waitlist" },
+  ];
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-[hsl(var(--background))]/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 lg:px-6">

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   CalendarClock,
   ClipboardList,
@@ -19,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WaitlistForm } from "@/components/waitlist/WaitlistForm";
+import { getSessionServer } from "@/lib/auth";
 
 const heroMetrics = [
   { label: "Events Today", value: "12", delta: "+5%" },
@@ -111,16 +113,22 @@ const faq = [
   {
     question: "What integrations do you support?",
     answer:
-      "The platform ships with APIs and planned integrations for payroll, facility systems, and SIS providers. The API Explorer highlights what’s live and what’s next.",
+      "The platform ships with APIs and planned integrations for payroll, facility systems, and SIS providers. The API Explorer highlights what's live and what's next.",
   },
   {
     question: "When will onboarding start?",
     answer:
-      "We’re bringing on early partners now. Join the waitlist and we’ll share migration guides, invite codes, and roll-out timelines for your region.",
+      "We're bringing on early partners now. Join the waitlist and we'll share migration guides, invite codes, and roll-out timelines for your region.",
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  // If user is authenticated, redirect to dashboard
+  const session = await getSessionServer();
+  if (session) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="space-y-24 pb-32">
       <section className="relative overflow-hidden border-b border-border">
@@ -153,6 +161,14 @@ export default function HomePage() {
                 className="border border-[hsl(var(--accent)/0.4)] bg-transparent text-foreground hover:border-[hsl(var(--accent)/0.6)] hover:text-[hsl(var(--accent))]"
               >
                 <Link href="#waitlist">Join Waitlist</Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="ghost"
+                className="border border-[hsl(var(--accent)/0.4)] bg-transparent text-foreground hover:border-[hsl(var(--accent)/0.6)] hover:text-[hsl(var(--accent))]"
+              >
+                <Link href="/login">Sign In</Link>
               </Button>
             </div>
             <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
@@ -287,7 +303,7 @@ export default function HomePage() {
           </Badge>
           <h2 className="text-3xl font-semibold">Join the Waitlist</h2>
           <p className="text-base text-muted-foreground">
-            Be among the first to experience modern league operations. We’ll
+            Be among the first to experience modern league operations. We'll
             reach out with onboarding resources and invite codes.
           </p>
           <ul className="space-y-3 text-sm text-muted-foreground">
@@ -301,6 +317,14 @@ export default function HomePage() {
               </li>
             ))}
           </ul>
+          <div className="pt-4">
+            <p className="text-sm text-muted-foreground mb-3">
+              Already have access? Sign in to your account.
+            </p>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/login">Sign In</Link>
+            </Button>
+          </div>
         </div>
         <div className="md:w-1/2">
           <WaitlistForm />
@@ -340,6 +364,9 @@ export default function HomePage() {
             </Link>
             <Link href="#waitlist" className="transition hover:text-foreground">
               Join Waitlist
+            </Link>
+            <Link href="/login" className="transition hover:text-foreground">
+              Sign In
             </Link>
             <Link href="/privacy" className="transition hover:text-foreground">
               Privacy

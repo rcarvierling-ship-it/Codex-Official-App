@@ -8,12 +8,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
-    "db:seed": "dotenv -e .env.local -- tsx src/server/db/seed.ts"
+    "db:seed": "dotenv -e .env.local -- tsx src/server/db/seed.ts",
+    "check:demo-leaks": "grep -R \"app/demo/\\|_data/mockData\\|@demo/\" app | grep -v \"app/demo/\" || true"
   },
   "description": "The Official App • 🏀 — all-in-one sports operations platform",
   "dependencies": {
+    "@auth/core": "^0.34.3",
     "@base44/sdk": "^0.1.2",
     "@hookform/resolvers": "^4.1.2",
     "@neondatabase/serverless": "^1.0.2",

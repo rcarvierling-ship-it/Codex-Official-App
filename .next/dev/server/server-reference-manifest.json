@@ -1,5 +1,21 @@
 {
-  "node": {},
+  "node": {
+    "60fc96a9340aea7ad50a3a61e13e401687e8d1ccf0": {
+      "workers": {
+        "app/(app)/approvals/page": {
+          "moduleId": "[project]/.next-internal/server/app/(app)/approvals/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/(app)/approvals/_components/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateRequestStatus",
+          "filename": "app/(app)/approvals/_components/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(app)/approvals/page": "action-browser"
+      },
+      "filename": "app/(app)/approvals/_components/actions.ts",
+      "exportedName": "updateRequestStatus"
+    }
+  },
   "edge": {},
-  "encryptionKey": "mP2ID6FaIDKYw3zNwcOnIpIOMW/ERCNlaGqozCFOeeA="
+  "encryptionKey": "eNIIYGQyNdJI76tHBNfal7/HX0ifew0OgO7Kg+hd4ME="
 }

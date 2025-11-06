@@ -1,9 +1,12 @@
 import { format } from "date-fns";
+import { redirect } from "next/navigation";
 import { sql } from "drizzle-orm";
 
 import { Sidebar } from "@/components/Sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getServerRole } from "@/lib/server-role";
+import { cn } from "@/lib/utils";
+import { requireRole } from "@/lib/auth-helpers";
+import { getRequests } from "@lib/repos/requests";
 import { db } from "@/server/db/client";
 import { events, users, waitlist } from "@/server/db/schema";
 
@@ -40,17 +43,18 @@ async function getWaitlistEntries() {
 }
 
 export default async function AdminPage() {
-  const role = await getServerRole();
-  const [eventsCount, usersCount, waitlistCount, waitlistRows] = await Promise.all([
+  const { role } = await requireRole("ADMIN");
+  const [eventsCount, usersCount, waitlistCount, waitlistRows, requests] = await Promise.all([
     getMetricCount(events),
     getMetricCount(users),
     getMetricCount(waitlist),
     getWaitlistEntries(),
+    getRequests(),
   ]);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-12 lg:flex-row">
-      <Sidebar initialRole={role} title="Operations" />
+      <Sidebar role={role} title="Operations" />
       <div className="flex-1 space-y-10">
         <header className="flex flex-col gap-3">
           <span className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--accent))]">
@@ -129,6 +133,49 @@ export default async function AdminPage() {
                     <span className="text-xs text-muted-foreground">
                       {entry.createdAt ? format(new Date(entry.createdAt), "MMM d, yyyy") : "—"}
                     </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Latest requests</h2>
+            <span className="text-xs text-muted-foreground">
+              Pulling {requests.length} most recent requests
+            </span>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-border bg-card/80 shadow-lg">
+            {requests.length === 0 ? (
+              <div className="px-6 py-8 text-sm text-muted-foreground">
+                No requests found. Seed your database or capture requests via the API to see them here.
+              </div>
+            ) : (
+              <ul className="divide-y divide-border/60">
+                {(requests ?? []).slice(0, 10).map((request) => (
+                  <li
+                    key={request.id}
+                    className="flex flex-col gap-1 px-6 py-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between"
+                  >
+                    <div>
+                      <p className="font-medium text-foreground">Event {request.eventId}</p>
+                      <p className="text-xs">User {request.userId}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={cn(
+                        "rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide",
+                        request.status === "APPROVED" && "border-emerald-500/40 text-emerald-300",
+                        request.status === "DECLINED" && "border-red-500/40 text-red-300",
+                        request.status === "PENDING" && "border-[hsl(var(--accent)/0.4)] text-[hsl(var(--accent))]"
+                      )}>
+                        {request.status}
+                      </span>
+                      <span className="text-xs">
+                        {format(new Date(request.submittedAt), "MMM d, yyyy · h:mm a")}
+                      </span>
+                    </div>
                   </li>
                 ))}
               </ul>

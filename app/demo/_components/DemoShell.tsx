@@ -16,12 +16,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { mapNavItemsToDemo } from "@/lib/demo-nav";
 import { getNavForRole, normalizeRole } from "@/lib/nav";
-import type { DemoRole } from "../_data/mockData";
+import type { DemoRole } from "@demo/_data/mockData";
 import {
   personaOptions,
   PersonaLabel,
   useDemoStore,
-} from "../_state/demoStore";
+} from "@demo/_state/demoStore";
 
 export default function DemoShell({
   children,
@@ -54,11 +54,11 @@ export default function DemoShell({
     }
   }, [allowedPaths, pathname, router, toast]);
 
-  const brandLogo = branding.logoDataUrl ?? "/logo.png";
+  const brandLogo = branding?.logoDataUrl ?? "/logo.png";
 
   return (
     <div className="flex min-h-screen flex-col bg-background lg:flex-row">
-      <Sidebar variant="demo" title="The Official App Demo" />
+      <Sidebar role={currentRole} variant="demo" title="The Official App Demo" />
       <div className="flex flex-1 flex-col">
         <header className="border-b border-border bg-background/80 px-4 py-4 backdrop-blur">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

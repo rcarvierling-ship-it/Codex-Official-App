@@ -7,7 +7,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 export default [
   { ignores: ['dist'] },
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
@@ -33,6 +33,14 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+      'no-restricted-imports': ['error', {
+        paths: [
+          { name: '@demo', message: 'Demo code can only be used under /app/demo.' },
+          { name: 'app/demo/_data/mockData', message: 'mockData is demo-only.' },
+          { name: 'app/demo/_state/demoStore', message: 'Demo store is demo-only.' }
+        ],
+        patterns: ['app/demo/*']
+      }],
     },
   },
 ]

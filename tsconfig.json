@@ -8,7 +8,7 @@
     ],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
     "noEmit": true,
     "incremental": true,
     "module": "esnext",
@@ -21,6 +21,8 @@
     "paths": {
       "@/components/*": ["components/*"],
       "@/lib/*": ["lib/*", "src/lib/*"],
+      "@lib/*": ["lib/*", "src/lib/*"],
+      "@demo/*": ["app/demo/*"],
       "@/app/*": ["app/*"],
       "@/server/*": ["src/server/*"],
       "@/emails/*": ["emails/*"]
@@ -42,6 +44,7 @@
     "**/*.jsx"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "app/demo/**"
   ]
 }

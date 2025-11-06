@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 import {
+  DemoAnnouncement,
   DemoAssignment,
   DemoAuditLog,
   DemoEvent,
@@ -110,24 +111,42 @@ export type DemoStoreState = {
   assignments: DemoAssignment[];
   activity: DemoAuditLog[];
   featureFlags: DemoFeatureFlags;
+  announcements: DemoAnnouncement[];
+  leagues: typeof mockData.leagues;
+  schools: typeof mockData.schools;
+  teams: typeof mockData.teams;
+  venues: typeof mockData.venues;
 
   // UI/session
   currentUserId: string | null;
+  activeUserId: string | null; // Alias for currentUserId
   selectedSchoolId: string | null;
+  currentPersona: string;
+  currentRole: DemoRole;
+  branding: { logoDataUrl?: string } | undefined;
+  rateLimits: { burst: number; sustained: number };
 
   // Actions
   switchUser: (userId: string) => void;
   setSelectedSchool: (schoolId: string | null) => void;
+  setPersona: (personaLabel: string) => void;
+  approveRequest: (id: string) => void;
+  declineRequest: (id: string) => void;
+  approveRequests: (ids: string[]) => void;
+  declineRequests: (ids: string[]) => void;
 
   setFeatureFlags: (flags: Partial<DemoFeatureFlags>) => void;
+  toggleFlag: (key: keyof DemoFeatureFlags) => void;
 
   upsertEvent: (event: DemoEvent) => void;
+  updateNotes: (eventId: string, notes: string) => void;
 
   submitRequest: (payload: {
     eventId: string;
     userId: string;
     message?: string;
   }) => void;
+  requestToWork: (eventId: string, message?: string) => void;
 
   updateRequestStatus: (opts: {
     id: string;
@@ -137,9 +156,20 @@ export type DemoStoreState = {
   }) => void;
 
   addAssignment: (assignment: DemoAssignment) => void;
+  updateUserRole: (userId: string, role: DemoRole) => void;
+
+  setBranding: (logoDataUrl: string | undefined) => void;
+  setRateLimits: (limits: { burst: number; sustained: number }) => void;
+
+  generateSample: (count: number) => void;
+  wipeStore: () => void;
+  reseed: () => void;
 
   resetDemo: () => void;
 };
+
+// Helper to get activeUserId (alias for currentUserId)
+export const getActiveUserId = (state: DemoStoreState) => state.currentUserId;
 
 export const useDemoStore = create<DemoStoreState>()(
   persist(
@@ -152,14 +182,27 @@ export const useDemoStore = create<DemoStoreState>()(
       assignments: mockData.assignments,
       activity: mockData.activity,
       featureFlags: mockData.featureFlags,
+      announcements: mockData.announcements,
+      leagues: mockData.leagues,
+      schools: mockData.schools,
+      teams: mockData.teams,
+      venues: mockData.venues,
 
       currentUserId: mockData.users[0]?.id ?? null,
+      activeUserId: mockData.users[0]?.id ?? null,
       selectedSchoolId: mockData.events[0]?.schoolId ?? null,
+      currentPersona: 'School Admin',
+      currentRole: mockData.users[0]?.role ?? 'ADMIN',
+      branding: undefined,
+      rateLimits: { burst: 120, sustained: 1000 },
 
       /* --------------------------------- Actions -------------------------------- */
 
       switchUser: (userId) => {
         const state = get();
+        const user = state.users.find(u => u.id === userId);
+        if (!user) return;
+        
         // keep selectedSchoolId if the new user still has access; otherwise clear
         const canSeeSelected =
           !!state.selectedSchoolId &&
@@ -167,9 +210,45 @@ export const useDemoStore = create<DemoStoreState>()(
             (u) => u.id === userId && u.schoolIds?.includes(state.selectedSchoolId!)
           );
 
+        const roleMap: Record<string, string> = {
+          'SUPER_ADMIN': 'League Admin',
+          'ADMIN': 'School Admin',
+          'AD': 'Athletic Director',
+          'COACH': 'Coach',
+          'OFFICIAL': 'Official',
+        };
+
         set({
           currentUserId: userId,
+          activeUserId: userId,
           selectedSchoolId: canSeeSelected ? state.selectedSchoolId : null,
+          currentPersona: roleMap[user.role] || 'School Admin',
+          currentRole: user.role,
+        });
+      },
+
+      setPersona: (personaLabel) => {
+        const persona = personaOptions.find(p => p.label === personaLabel);
+        if (persona) {
+          get().switchUser(persona.userId);
+        }
+      },
+
+      approveRequest: (id) => {
+        const state = get();
+        state.updateRequestStatus({
+          id,
+          nextStatus: 'APPROVED',
+          actorUserId: state.currentUserId || 'system',
+        });
+      },
+
+      declineRequest: (id) => {
+        const state = get();
+        state.updateRequestStatus({
+          id,
+          nextStatus: 'DECLINED',
+          actorUserId: state.currentUserId || 'system',
         });
       },
 
@@ -199,7 +278,7 @@ export const useDemoStore = create<DemoStoreState>()(
           activity: addActivity(state.activity, {
             actorUserId: state.currentUserId ?? 'system',
             type: exists ? 'EVENT_UPDATED' : 'EVENT_CREATED',
-            details: JSON.stringify({ id: event.id, name: event.name }),
+            details: JSON.stringify({ id: event.id, title: event.title }),
           }),
         });
       },
@@ -245,9 +324,8 @@ export const useDemoStore = create<DemoStoreState>()(
               id: `asn_${Math.random().toString(36).slice(2, 10)}`,
               eventId: req.eventId,
               userId: req.userId,
-              role: 'OFFICIAL',
-              createdAt: nowISO(),
-              status: 'ASSIGNED',
+              position: 'Official',
+              confirmedAt: nowISO(),
             };
             newAssignments = [assignment, ...newAssignments];
           }
@@ -285,6 +363,164 @@ export const useDemoStore = create<DemoStoreState>()(
         });
       },
 
+      approveRequests: (ids) => {
+        const state = get();
+        ids.forEach((id) => {
+          state.updateRequestStatus({
+            id,
+            nextStatus: 'APPROVED',
+            actorUserId: state.currentUserId || 'system',
+          });
+        });
+      },
+
+      declineRequests: (ids) => {
+        const state = get();
+        ids.forEach((id) => {
+          state.updateRequestStatus({
+            id,
+            nextStatus: 'DECLINED',
+            actorUserId: state.currentUserId || 'system',
+          });
+        });
+      },
+
+      toggleFlag: (key) => {
+        const state = get();
+        state.setFeatureFlags({ [key]: !state.featureFlags[key] });
+      },
+
+      updateNotes: (eventId, notes) => {
+        const state = get();
+        const updatedEvents = state.events.map((e) =>
+          e.id === eventId ? { ...e, notes } : e
+        );
+        set({ events: updatedEvents });
+      },
+
+      requestToWork: (eventId, message) => {
+        const state = get();
+        state.submitRequest({
+          eventId,
+          userId: state.currentUserId || 'user-official-1',
+          message,
+        });
+      },
+
+      updateUserRole: (userId, role) => {
+        const state = get();
+        const updatedUsers = state.users.map((u) =>
+          u.id === userId ? { ...u, role } : u
+        );
+        set({
+          users: updatedUsers,
+          activity: addActivity(state.activity, {
+            actorUserId: state.currentUserId ?? 'system',
+            type: 'USER_ROLE_UPDATED',
+            details: JSON.stringify({ userId, role }),
+          }),
+        });
+      },
+
+      setBranding: (logoDataUrl) => {
+        set({ branding: logoDataUrl ? { logoDataUrl } : undefined });
+      },
+
+      setRateLimits: (limits) => {
+        set({ rateLimits: limits });
+      },
+
+      generateSample: (count) => {
+        const state = get();
+        const newSchools: typeof mockData.schools = [];
+        const newTeams: typeof mockData.teams = [];
+        const newEvents: DemoEvent[] = [];
+
+        for (let i = 0; i < count; i++) {
+          const schoolId = `school-sample-${i}`;
+          const leagueId = state.leagues[i % state.leagues.length]?.id ?? state.leagues[0]?.id;
+          newSchools.push({
+            id: schoolId,
+            leagueId: leagueId ?? 'league-1',
+            name: `Sample School ${i + 1}`,
+            mascot: 'Tigers',
+            city: 'Sample City',
+            state: 'XX',
+          });
+
+          const teamId = `team-sample-${i}`;
+          newTeams.push({
+            id: teamId,
+            schoolId,
+            name: `Sample Team ${i + 1}`,
+            sport: 'Basketball',
+            level: 'Varsity',
+            record: '0-0',
+          });
+
+          const eventId = `event-sample-${i}`;
+          newEvents.push({
+            id: eventId,
+            title: `Sample Event ${i + 1}`,
+            leagueId: leagueId ?? 'league-1',
+            schoolId,
+            homeTeamId: teamId,
+            awayTeamId: state.teams[0]?.id ?? 'team-1',
+            venueId: state.venues[0]?.id ?? 'venue-1',
+            sport: 'Basketball',
+            level: 'Varsity',
+            start: new Date(Date.now() + i * 24 * 60 * 60 * 1000).toISOString(),
+            end: new Date(Date.now() + i * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+            status: 'Scheduled',
+            notes: '',
+            createdBy: state.currentUserId ?? 'system',
+          });
+        }
+
+        set({
+          schools: [...state.schools, ...newSchools],
+          teams: [...state.teams, ...newTeams],
+          events: [...state.events, ...newEvents],
+          activity: addActivity(state.activity, {
+            actorUserId: state.currentUserId ?? 'system',
+            type: 'SAMPLE_DATA_GENERATED',
+            details: JSON.stringify({ count }),
+          }),
+        });
+      },
+
+      wipeStore: () => {
+        set({
+          users: [],
+          events: [],
+          requests: [],
+          assignments: [],
+          schools: [],
+          teams: [],
+          leagues: [],
+          venues: [],
+          announcements: [],
+          activity: [],
+        });
+      },
+
+      reseed: () => {
+        set({
+          users: mockData.users,
+          roles: mockData.roles,
+          events: mockData.events,
+          requests: mockData.requests,
+          assignments: mockData.assignments,
+          activity: mockData.activity,
+          featureFlags: mockData.featureFlags,
+          announcements: mockData.announcements,
+          leagues: mockData.leagues,
+          schools: mockData.schools,
+          teams: mockData.teams,
+          venues: mockData.venues,
+        });
+      },
+
       resetDemo: () =>
         set({
           users: mockData.users,
@@ -294,8 +530,18 @@ export const useDemoStore = create<DemoStoreState>()(
           assignments: mockData.assignments,
           activity: mockData.activity,
           featureFlags: mockData.featureFlags,
+          announcements: mockData.announcements,
+          leagues: mockData.leagues,
+          schools: mockData.schools,
+          teams: mockData.teams,
+          venues: mockData.venues,
           currentUserId: mockData.users[0]?.id ?? null,
+          activeUserId: mockData.users[0]?.id ?? null,
           selectedSchoolId: mockData.events[0]?.schoolId ?? null,
+          currentPersona: 'School Admin',
+          currentRole: mockData.users[0]?.role ?? 'ADMIN',
+          branding: undefined,
+          rateLimits: { burst: 120, sustained: 1000 },
         }),
     }),
     {
@@ -312,8 +558,18 @@ export const useDemoStore = create<DemoStoreState>()(
         assignments: state.assignments,
         activity: state.activity,
         featureFlags: state.featureFlags,
+        announcements: state.announcements,
+        leagues: state.leagues,
+        schools: state.schools,
+        teams: state.teams,
+        venues: state.venues,
         currentUserId: state.currentUserId,
+        activeUserId: state.activeUserId,
         selectedSchoolId: state.selectedSchoolId,
+        currentPersona: state.currentPersona,
+        currentRole: state.currentRole,
+        branding: state.branding,
+        rateLimits: state.rateLimits,
       }),
     }
   )

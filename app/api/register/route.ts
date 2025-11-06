@@ -5,8 +5,6 @@ import { NextResponse } from "next/server";
 import { db } from "@/server/db/client";
 import { users } from "@/server/db/schema";
 
-export const runtime = "nodejs";
-
 export async function POST(request: Request) {
   try {
     const { name, email, password } = await request.json();

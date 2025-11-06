@@ -37,7 +37,8 @@ const toastVariants = cva(
   }
 );
 
-const Toast = React.forwardRef(({ className, variant, ...props }, ref) => {
+const Toast = React.forwardRef(({ className, variant, onOpenChange, open, ...props }, ref) => {
+  // NOTE: intentionally NOT passing onOpenChange/open to <div> (Radix-only props)
   return (
     <div
       ref={ref}

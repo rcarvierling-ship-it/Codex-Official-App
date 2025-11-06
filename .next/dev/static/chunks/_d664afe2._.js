@@ -557,7 +557,8 @@ const toastVariants = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_m
         variant: "default"
     }
 });
-const Toast = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$28$2e$5_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["forwardRef"](_c4 = ({ className, variant, ...props }, ref)=>{
+const Toast = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$28$2e$5_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["forwardRef"](_c4 = ({ className, variant, onOpenChange, open, ...props }, ref)=>{
+    // NOTE: intentionally NOT passing onOpenChange/open to <div> (Radix-only props)
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$28$2e$5_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         ref: ref,
         className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])(toastVariants({
@@ -566,7 +567,7 @@ const Toast = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$5d2f$node
         ...props
     }, void 0, false, {
         fileName: "[project]/components/ui/toast.jsx",
-        lineNumber: 42,
+        lineNumber: 43,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 });
@@ -578,7 +579,7 @@ const ToastAction = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$5d2
         ...props
     }, void 0, false, {
         fileName: "[project]/components/ui/toast.jsx",
-        lineNumber: 52,
+        lineNumber: 53,
         columnNumber: 3
     }, ("TURBOPACK compile-time value", void 0)));
 _c7 = ToastAction;
@@ -592,12 +593,12 @@ const ToastClose = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$5d2f
             className: "h-4 w-4"
         }, void 0, false, {
             fileName: "[project]/components/ui/toast.jsx",
-            lineNumber: 73,
+            lineNumber: 74,
             columnNumber: 5
         }, ("TURBOPACK compile-time value", void 0))
     }, void 0, false, {
         fileName: "[project]/components/ui/toast.jsx",
-        lineNumber: 64,
+        lineNumber: 65,
         columnNumber: 3
     }, ("TURBOPACK compile-time value", void 0)));
 _c9 = ToastClose;
@@ -608,7 +609,7 @@ const ToastTitle = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$5d2f
         ...props
     }, void 0, false, {
         fileName: "[project]/components/ui/toast.jsx",
-        lineNumber: 79,
+        lineNumber: 80,
         columnNumber: 3
     }, ("TURBOPACK compile-time value", void 0)));
 _c11 = ToastTitle;
@@ -619,7 +620,7 @@ const ToastDescription = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$projec
         ...props
     }, void 0, false, {
         fileName: "[project]/components/ui/toast.jsx",
-        lineNumber: 88,
+        lineNumber: 89,
         columnNumber: 3
     }, ("TURBOPACK compile-time value", void 0)));
 _c13 = ToastDescription;

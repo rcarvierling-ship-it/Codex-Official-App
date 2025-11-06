@@ -6,6 +6,8 @@ export const metadata = {
   title: "The Official App Demo • 🏀",
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function DemoLayout({
   children,
 }: {
