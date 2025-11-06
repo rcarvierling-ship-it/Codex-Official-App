@@ -88,7 +88,7 @@ type DemoState = {
   venues: typeof mockData.venues;
   users: typeof mockData.users;
   events: typeof mockData.events;
-  requests: typeof mockData.requests;
+  requests: DemoRequest [];
   assignments: typeof mockData.assignments;
   announcements: typeof mockData.announcements;
   waitlist: typeof mockData.waitlist;
