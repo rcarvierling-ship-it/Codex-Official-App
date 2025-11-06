@@ -1,7 +1,7 @@
 'use client';
 
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 import {
   DemoAssignment,
@@ -12,493 +12,309 @@ import {
   DemoRole,
   DemoUser,
   mockData,
-} from "../_data/mockData";
+} from '../_data/mockData';
 
+/**
+ * Persona presets shown in the demo header/switcher
+ */
 export const personaOptions = [
   {
-    label: "League Admin",
-    userId: "user-superadmin",
+    label: 'League Admin',
+    userId: 'user-superadmin',
     summary:
-      "Oversees league-wide operations and unlocks every control surface.",
+      'Oversees league-wide operations and unlocks every control surface.',
     highlights: [
-      "Launch seasons across multiple schools",
-      "Approve budgets, staffing, and workflows",
-      "Roll out new feature flags to programs",
+      'Launch seasons across multiple schools',
+      'Approve budgets, staffing, and workflows',
+      'Roll out new feature flags to programs',
     ],
   },
   {
-    label: "School Admin",
-    userId: "user-school-admin",
-    summary: "Manages school schedules, teams, and coordinator workflows.",
+    label: 'School Admin',
+    userId: 'user-school-admin',
+    summary: 'Manages school schedules, teams, and coordinator workflows.',
     highlights: [
-      "Publish schedules and manage venues",
-      "Invite officials and assign staff",
-      "Review approvals from coaches and ADs",
+      'Publish schedules and manage venues',
+      'Invite officials and assign staff',
+      'Review approvals from coaches and ADs',
     ],
   },
   {
-    label: "Athletic Director",
-    userId: "user-ad",
-    summary:
-      "Reviews requests, confirms officials, and communicates with crews.",
+    label: 'Athletic Director',
+    userId: 'user-ad',
+    summary: 'Reviews, approves, and escalates requests across a program.',
     highlights: [
-      "Approve or decline staffing requests",
-      "Monitor assignment coverage",
-      "Send updates to teams and officials",
+      'Approve or decline event requests',
+      'Manage teams and budget approvals',
+      'Coordinate with league administrators',
     ],
   },
   {
-    label: "Coach",
-    userId: "user-coach",
-    summary: "Keeps rosters, events, and communications aligned for teams.",
+    label: 'Coach',
+    userId: 'user-coach',
+    summary: 'Submits game requests and manages team rosters.',
     highlights: [
-      "Track schedules and roster availability",
-      "Submit staffing requests for upcoming events",
-      "Receive official confirmations in real time",
+      'Request new games and scrimmages',
+      'Upload rosters and manage lineups',
+      'Coordinate with ADs and officials',
     ],
   },
   {
-    label: "Official",
-    userId: "user-official-1",
-    summary: "Requests assignments and confirms availability on the go.",
+    label: 'Official',
+    userId: 'user-official',
+    summary: 'Claims assignments and reports results.',
     highlights: [
-      "Request to work marquee events",
-      "Update travel windows and certifications",
-      "Track assignments and payouts",
-    ],
-  },
-  {
-    label: "Viewer",
-    userId: "user-viewer",
-    summary: "Observes schedules and dashboards without edit permissions.",
-    highlights: [
-      "Monitor upcoming events and alerts",
-      "Follow assignment changes in real time",
-      "Review activity feeds and analytics",
+      'Claim or decline assignments',
+      'Report game outcomes',
+      'Track payments and certifications',
     ],
   },
 ] as const;
 
-export type PersonaLabel = (typeof personaOptions)[number]["label"];
+/* --------------------------------- Helpers -------------------------------- */
 
-type DemoState = {
-  leagues: typeof mockData.leagues;
-  schools: typeof mockData.schools;
-  teams: typeof mockData.teams;
-  venues: typeof mockData.venues;
-  users: typeof mockData.users;
-  events: typeof mockData.events;
-  requests: DemoRequest [];
-  assignments: typeof mockData.assignments;
-  announcements: typeof mockData.announcements;
-  waitlist: typeof mockData.waitlist;
-  notifications: typeof mockData.notifications;
-  featureFlags: DemoFeatureFlags;
-  activity: DemoAuditLog[];
-  branding: { logoDataUrl?: string };
-  rateLimits: { burst: number; sustained: number };
-  notesByEvent: Record<string, string>;
-  activeUserId: string;
-  currentRole: DemoRole;
-  currentPersona: PersonaLabel;
-  requestToWork: (eventId: string) => void;
-  approveRequest: (requestId: string) => void;
-  declineRequest: (requestId: string) => void;
-  approveRequests: (requestIds: string[]) => void;
-  declineRequests: (requestIds: string[]) => void;
-  toggleFlag: (key: keyof DemoFeatureFlags) => void;
-  generateSample: (count: number) => void;
-  wipeStore: () => void;
-  reseed: () => void;
-  setBranding: (logoDataUrl?: string) => void;
-  setRateLimits: (limits: { burst: number; sustained: number }) => void;
-  updateNotes: (eventId: string, notes: string) => void;
-  setPersona: (persona: PersonaLabel) => void;
-  setRole: (role: DemoRole) => void;
-  logAction: (message: string) => void;
-  updateUserRole: (userId: string, role: DemoRole) => void;
+type RequestStatus = DemoRequest['status']; // "PENDING" | "APPROVED" | "DECLINED" (from types)
+
+/**
+ * Normalize any incoming string to a valid DemoRequest status.
+ * Keeps types narrow so updated arrays infer as DemoRequest[] (not widening to string).
+ */
+const normalizeStatus = (s: string): RequestStatus => {
+  const u = s.toUpperCase();
+  if (u === 'APPROVED' || u === 'DECLINED' || u === 'PENDING') return u;
+  return 'PENDING';
 };
 
-const generateId = () => {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `demo-${Math.random().toString(36).slice(2, 10)}`;
-};
+const nowISO = () => new Date().toISOString();
 
 const addActivity = (
   activity: DemoAuditLog[],
-  message: string,
+  entry: Omit<DemoAuditLog, 'id' | 'timestamp'>
 ): DemoAuditLog[] => {
-  const entry: DemoAuditLog = {
-    id: generateId(),
-    message,
-    timestamp: new Date().toISOString(),
+  const newEntry: DemoAuditLog = {
+    id: `log_${Math.random().toString(36).slice(2, 10)}`,
+    timestamp: nowISO(),
+    ...entry,
   };
-
-  return [entry, ...activity].slice(0, 40);
+  return [newEntry, ...activity];
 };
 
-const initialPersona = personaOptions[0];
-const initialUser =
-  mockData.users.find((user) => user.id === initialPersona.userId) ??
-  mockData.users[0];
+/* --------------------------------- Store ---------------------------------- */
 
-const getUserById = (users: DemoUser[], id: string) =>
-  users.find((user) => user.id === id);
+export type DemoStoreState = {
+  // Data
+  users: DemoUser[];
+  roles: DemoRole[];
+  events: DemoEvent[];
+  requests: DemoRequest[];
+  assignments: DemoAssignment[];
+  activity: DemoAuditLog[];
+  featureFlags: DemoFeatureFlags;
 
-export const useDemoStore = create<DemoState>()(
+  // UI/session
+  currentUserId: string | null;
+  selectedSchoolId: string | null;
+
+  // Actions
+  switchUser: (userId: string) => void;
+  setSelectedSchool: (schoolId: string | null) => void;
+
+  setFeatureFlags: (flags: Partial<DemoFeatureFlags>) => void;
+
+  upsertEvent: (event: DemoEvent) => void;
+
+  submitRequest: (payload: {
+    eventId: string;
+    userId: string;
+    message?: string;
+  }) => void;
+
+  updateRequestStatus: (opts: {
+    id: string;
+    nextStatus: string; // accept raw string from UI/API and normalize it
+    actorUserId: string;
+    note?: string;
+  }) => void;
+
+  addAssignment: (assignment: DemoAssignment) => void;
+
+  resetDemo: () => void;
+};
+
+export const useDemoStore = create<DemoStoreState>()(
   persist(
     (set, get) => ({
-      leagues: mockData.leagues,
-      schools: mockData.schools,
-      teams: mockData.teams,
-      venues: mockData.venues,
+      /* ------------------------------ Initial State ----------------------------- */
       users: mockData.users,
+      roles: mockData.roles,
       events: mockData.events,
       requests: mockData.requests,
       assignments: mockData.assignments,
-      announcements: mockData.announcements,
-      waitlist: mockData.waitlist,
-      notifications: mockData.notifications,
+      activity: mockData.activity,
       featureFlags: mockData.featureFlags,
-      activity: mockData.auditLogs,
-      branding: {},
-      rateLimits: { burst: 180, sustained: 1200 },
-      notesByEvent: {},
-      activeUserId: initialUser.id,
-      currentRole: initialUser.role,
-      currentPersona: initialPersona.label,
-      requestToWork: (eventId) => {
+
+      currentUserId: mockData.users[0]?.id ?? null,
+      selectedSchoolId: mockData.events[0]?.schoolId ?? null,
+
+      /* --------------------------------- Actions -------------------------------- */
+
+      switchUser: (userId) => {
         const state = get();
-        if (state.currentRole !== "OFFICIAL") {
-          set({
-            activity: addActivity(
-              state.activity,
-              "Tried to request work, but this persona cannot request assignments.",
-            ),
-          });
-          return;
-        }
+        // keep selectedSchoolId if the new user still has access; otherwise clear
+        const canSeeSelected =
+          !!state.selectedSchoolId &&
+          state.users.some(
+            (u) => u.id === userId && u.schoolIds?.includes(state.selectedSchoolId!)
+          );
 
-        const user = getUserById(state.users, state.activeUserId);
-        const event = state.events.find((e) => e.id === eventId);
-        if (!user || !event) return;
+        set({
+          currentUserId: userId,
+          selectedSchoolId: canSeeSelected ? state.selectedSchoolId : null,
+        });
+      },
 
-        const alreadyRequested = state.requests.some(
-          (req) =>
-            req.eventId === eventId &&
-            req.userId === user.id &&
-            req.status === "PENDING",
-        );
+      setSelectedSchool: (schoolId) => set({ selectedSchoolId: schoolId }),
 
-        if (alreadyRequested) {
-          set({
-            activity: addActivity(
-              state.activity,
-              `${user.name} already has a pending request for ${event.title}.`,
-            ),
-          });
-          return;
-        }
+      setFeatureFlags: (flags) => {
+        const state = get();
+        set({
+          featureFlags: { ...state.featureFlags, ...flags },
+          activity: addActivity(state.activity, {
+            actorUserId: state.currentUserId ?? 'system',
+            type: 'FEATURE_FLAGS_UPDATED',
+            details: JSON.stringify(flags),
+          }),
+        });
+      },
 
-        const newRequest: DemoRequest = {
-          id: generateId(),
+      upsertEvent: (event) => {
+        const state = get();
+        const exists = state.events.some((e) => e.id === event.id);
+        const nextEvents = exists
+          ? state.events.map((e) => (e.id === event.id ? event : e))
+          : [event, ...state.events];
+
+        set({
+          events: nextEvents,
+          activity: addActivity(state.activity, {
+            actorUserId: state.currentUserId ?? 'system',
+            type: exists ? 'EVENT_UPDATED' : 'EVENT_CREATED',
+            details: JSON.stringify({ id: event.id, name: event.name }),
+          }),
+        });
+      },
+
+      submitRequest: ({ eventId, userId, message }) => {
+        const state = get();
+
+        const newReq: DemoRequest = {
+          id: `req_${Math.random().toString(36).slice(2, 10)}`,
           eventId,
-          userId: user.id,
-          status: "PENDING",
-          submittedAt: new Date().toISOString(),
-          message: "Ready to work – added via interactive demo.",
+          userId,
+          status: 'PENDING',
+          submittedAt: nowISO(),
+          message,
         };
 
         set({
-          requests: [newRequest, ...state.requests],
-          activity: addActivity(
-            state.activity,
-            `${user.name} requested to work ${event.title}.`,
-          ),
+          requests: [newReq, ...state.requests],
+          activity: addActivity(state.activity, {
+            actorUserId: userId,
+            type: 'REQUEST_SUBMITTED',
+            details: JSON.stringify({ id: newReq.id, eventId }),
+          }),
         });
       },
-      approveRequest: (requestId) => {
+
+      updateRequestStatus: ({ id, nextStatus, actorUserId, note }) => {
         const state = get();
-        if (!["SUPER_ADMIN", "ADMIN", "AD"].includes(state.currentRole)) {
-          set({
-            activity: addActivity(
-              state.activity,
-              "Approval blocked — this persona does not have permission.",
-            ),
-          });
-          return;
-        }
 
-        const request = state.requests.find((r) => r.id === requestId);
-        if (!request) return;
+        const normalized: RequestStatus = normalizeStatus(nextStatus);
 
-        const event = state.events.find((e) => e.id === request.eventId);
-        const user = getUserById(state.users, request.userId);
-        const approver = getUserById(state.users, state.activeUserId);
-        if (!event || !user || !approver) return;
-
-        const updatedRequests = state.requests.map((req) =>
-          req.id === requestId ? { ...req, status: "APPROVED" } : req,
+        // Build a correctly typed array; status stays within the union
+        const updatedRequests: DemoRequest[] = state.requests.map((r) =>
+          r.id === id ? { ...r, status: normalized } : r
         );
 
-        const assignment: DemoAssignment = {
-          id: generateId(),
-          eventId: request.eventId,
-          userId: request.userId,
-          position: `${event.sport} Official`,
-          confirmedAt: new Date().toISOString(),
-        };
+        // If approving, you might create an assignment stub here (demo behavior)
+        let newAssignments = state.assignments;
+        if (normalized === 'APPROVED') {
+          const req = state.requests.find((r) => r.id === id);
+          if (req) {
+            const assignment: DemoAssignment = {
+              id: `asn_${Math.random().toString(36).slice(2, 10)}`,
+              eventId: req.eventId,
+              userId: req.userId,
+              role: 'OFFICIAL',
+              createdAt: nowISO(),
+              status: 'ASSIGNED',
+            };
+            newAssignments = [assignment, ...newAssignments];
+          }
+        }
 
         set({
           requests: updatedRequests,
+          assignments: newAssignments,
+          activity: addActivity(state.activity, {
+            actorUserId,
+            type:
+              normalized === 'APPROVED'
+                ? 'REQUEST_APPROVED'
+                : normalized === 'DECLINED'
+                ? 'REQUEST_DECLINED'
+                : 'REQUEST_MARKED_PENDING',
+            details: JSON.stringify({ id, note }),
+          }),
+        });
+      },
+
+      addAssignment: (assignment) => {
+        const state = get();
+        set({
           assignments: [assignment, ...state.assignments],
-          activity: addActivity(
-            state.activity,
-            `${approver.name} approved ${user.name} for ${event.title}.`,
-          ),
+          activity: addActivity(state.activity, {
+            actorUserId: state.currentUserId ?? 'system',
+            type: 'ASSIGNMENT_ADDED',
+            details: JSON.stringify({
+              id: assignment.id,
+              eventId: assignment.eventId,
+              userId: assignment.userId,
+            }),
+          }),
         });
       },
-      declineRequest: (requestId) => {
-        const state = get();
-        if (!["SUPER_ADMIN", "ADMIN", "AD"].includes(state.currentRole)) {
-          set({
-            activity: addActivity(
-              state.activity,
-              "Decline blocked — this persona does not have permission.",
-            ),
-          });
-          return;
-        }
 
-        const request = state.requests.find((r) => r.id === requestId);
-        if (!request) return;
-
-        const user = getUserById(state.users, request.userId);
-        const event = state.events.find((e) => e.id === request.eventId);
-        const approver = getUserById(state.users, state.activeUserId);
-        if (!user || !event || !approver) return;
-
+      resetDemo: () =>
         set({
-          requests: state.requests.map((req) =>
-            req.id === requestId ? { ...req, status: "DECLINED" } : req,
-          ),
-          activity: addActivity(
-            state.activity,
-            `${approver.name} declined ${user.name} for ${event.title}.`,
-          ),
-        });
-      },
-      approveRequests: (requestIds) => {
-        const { approveRequest } = get();
-        requestIds.forEach((id) => {
-          approveRequest(id);
-        });
-      },
-      declineRequests: (requestIds) => {
-        const { declineRequest } = get();
-        requestIds.forEach((id) => {
-          declineRequest(id);
-        });
-      },
-      toggleFlag: (key) => {
-        const state = get();
-        set({
-          featureFlags: {
-            ...state.featureFlags,
-            [key]: !state.featureFlags[key],
-          },
-          activity: addActivity(
-            state.activity,
-            `${state.featureFlags[key] ? "Disabled" : "Enabled"} feature flag ${key}.`,
-          ),
-        });
-      },
-      generateSample: (count) => {
-        const state = get();
-        const createdEvents: DemoEvent[] = [];
-        const createdSchools: typeof state.schools = [];
-        const createdTeams: typeof state.teams = [];
-        const now = Date.now();
-
-        for (let i = 0; i < count; i += 1) {
-          const league = state.leagues[i % state.leagues.length] ?? state.leagues[0];
-          const venue = state.venues[i % state.venues.length] ?? state.venues[0];
-          const schoolId = generateId();
-          const teamId = generateId();
-          const opponent = state.teams[(i + 1) % state.teams.length];
-
-          createdSchools.push({
-            id: schoolId,
-            leagueId: league.id,
-            name: `Sample Prep ${i + 1}`,
-            mascot: ["Falcons", "Chargers", "Titans", "Hawks"][i % 4],
-            city: ["Asheville", "Madison", "Fairview", "Brighton"][i % 4],
-            state: ["NC", "WI", "OH", "MI"][i % 4],
-          });
-
-          createdTeams.push({
-            id: teamId,
-            schoolId,
-            name: `Sample Prep ${i + 1} ${["Lions", "Storm", "Ravens", "Bears"][i % 4]}`,
-            sport: opponent?.sport ?? "Basketball",
-            level: opponent?.level ?? "Varsity",
-            record: `${10 + i}-${i}`,
-          });
-
-          createdEvents.push({
-            id: generateId(),
-            title: `${createdTeams[i]?.name ?? "Sample"} vs ${opponent?.name ?? "Opponent"}`,
-            leagueId: league.id,
-            schoolId,
-            homeTeamId: teamId,
-            awayTeamId: opponent?.id ?? state.teams[0]?.id ?? teamId,
-            venueId: venue.id,
-            sport: createdTeams[i]?.sport ?? "Basketball",
-            level: createdTeams[i]?.level ?? "Varsity",
-            start: new Date(now + (i + 1) * 3_600_000).toISOString(),
-            end: new Date(now + (i + 1.5) * 3_600_000).toISOString(),
-            status: "Scheduled",
-            notes: "Generated via demo tools.",
-            createdBy: state.activeUserId,
-          });
-        }
-
-        set({
-          schools: [...createdSchools, ...state.schools],
-          teams: [...createdTeams, ...state.teams],
-          events: [...createdEvents, ...state.events],
-          activity: addActivity(
-            state.activity,
-            `Generated ${count} sample schools, teams, and events for quick demos.`,
-          ),
-        });
-      },
-      wipeStore: () => {
-        const state = get();
-        set({
-          events: [],
-          requests: [],
-          assignments: [],
-          announcements: [],
-          waitlist: [],
-          activity: addActivity([], "Cleared demo data via dev tools."),
-        });
-      },
-      reseed: () => {
-        set({
-          leagues: mockData.leagues,
-          schools: mockData.schools,
-          teams: mockData.teams,
-          venues: mockData.venues,
           users: mockData.users,
+          roles: mockData.roles,
           events: mockData.events,
           requests: mockData.requests,
           assignments: mockData.assignments,
-          announcements: mockData.announcements,
-          waitlist: mockData.waitlist,
-          notifications: mockData.notifications,
-          activity: addActivity(mockData.auditLogs, "Reseeded demo store to defaults."),
-        });
-      },
-      setBranding: (logoDataUrl) => {
-        const state = get();
-        set({
-          branding: { logoDataUrl },
-          activity: addActivity(
-            state.activity,
-            logoDataUrl
-              ? "Updated brand logo for the dashboard."
-              : "Cleared custom branding.",
-          ),
-        });
-      },
-      setRateLimits: (limits) => {
-        const state = get();
-        set({
-          rateLimits: limits,
-          activity: addActivity(
-            state.activity,
-            `Adjusted rate limits to burst ${limits.burst}/min and sustained ${limits.sustained}/hr.`,
-          ),
-        });
-      },
-      updateNotes: (eventId, notes) => {
-        const state = get();
-        set({
-          notesByEvent: {
-            ...state.notesByEvent,
-            [eventId]: notes,
-          },
-        });
-      },
-      setPersona: (personaLabel) => {
-        const state = get();
-        const persona = personaOptions.find(
-          (option) => option.label === personaLabel,
-        );
-        if (!persona) return;
-        const user = getUserById(state.users, persona.userId);
-        if (!user) return;
-
-        set({
-          currentPersona: persona.label,
-          activeUserId: persona.userId,
-          currentRole: user.role,
-          activity: addActivity(
-            state.activity,
-            `Switched persona to ${persona.label}.`,
-          ),
-        });
-      },
-      setRole: (role) => {
-        const state = get();
-        set({
-          currentRole: role,
-          activity: addActivity(
-            state.activity,
-            `Switched role context to ${role}.`,
-          ),
-        });
-      },
-      logAction: (message) => {
-        const state = get();
-        set({
-          activity: addActivity(state.activity, message),
-        });
-      },
-      updateUserRole: (userId, role) => {
-        const state = get();
-        const actor = getUserById(state.users, state.activeUserId);
-        if (!actor || actor.role !== "SUPER_ADMIN") return;
-
-        set({
-          users: state.users.map((user) =>
-            user.id === userId ? { ...user, role } : user,
-          ),
-          activity: addActivity(
-            state.activity,
-            `${actor.name} changed ${
-              state.users.find((u) => u.id === userId)?.name ?? "user"
-            } to role ${role}.`,
-          ),
-        });
-      },
+          activity: mockData.activity,
+          featureFlags: mockData.featureFlags,
+          currentUserId: mockData.users[0]?.id ?? null,
+          selectedSchoolId: mockData.events[0]?.schoolId ?? null,
+        }),
     }),
     {
-      name: "theofficialapp-demo-store",
-      storage: createJSONStorage(() => localStorage),
+      name: 'official-app-demo-store',
+      version: 1,
+      storage: createJSONStorage(() => sessionStorage),
+      // If your mock types change, you can bump version and migrate here.
+      // migrate: (persisted, version) => { ...; return migratedState; }
       partialize: (state) => ({
+        users: state.users,
+        roles: state.roles,
+        events: state.events,
+        requests: state.requests,
+        assignments: state.assignments,
+        activity: state.activity,
         featureFlags: state.featureFlags,
-        branding: state.branding,
-        rateLimits: state.rateLimits,
-        notesByEvent: state.notesByEvent,
-        activeUserId: state.activeUserId,
-        currentRole: state.currentRole,
-        currentPersona: state.currentPersona,
+        currentUserId: state.currentUserId,
+        selectedSchoolId: state.selectedSchoolId,
       }),
-    },
-  ),
+    }
+  )
 );
