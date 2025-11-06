@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import Link from "next/link";
 
 export const metadata = { title: "Events" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function EventsPage() {

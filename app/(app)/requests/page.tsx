@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Requests" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function RequestsPage() {

@@ -9,6 +9,9 @@ import { requireRole } from "@/lib/auth-helpers";
 import { getRequests } from "@lib/repos/requests";
 import { hasDbEnv } from "@/lib/db";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 async function getMetricCount<T>(table: T) {
   try {
     if (!hasDbEnv) return 0;

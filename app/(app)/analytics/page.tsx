@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, subDays, startOfDay } from "date-fns";
 
 export const metadata = { title: "Analytics" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function AnalyticsPage() {

@@ -3,8 +3,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { db } from "@/server/db/client";
-import { waitlist } from "@/server/db/schema";
+import { hasDbEnv } from "@/lib/db";
 import { WaitlistConfirmationEmail } from "@/emails/waitlist-confirmation";
 
 const rateLimitStore = new Map<string, number[]>();
@@ -84,6 +83,14 @@ export async function POST(request: Request) {
   const userAgent = request.headers.get("user-agent") ?? "unknown";
 
   try {
+    if (!hasDbEnv) {
+      return NextResponse.json(
+        { message: "Database not configured." },
+        { status: 503 },
+      );
+    }
+    const { db } = await import("@/server/db/client");
+    const { waitlist } = await import("@/server/db/schema");
     const existing = await db
       .select({ id: waitlist.id })
       .from(waitlist)

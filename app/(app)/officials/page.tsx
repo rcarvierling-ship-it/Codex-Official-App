@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
 export const metadata = { title: "Officials Directory" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function OfficialsPage() {

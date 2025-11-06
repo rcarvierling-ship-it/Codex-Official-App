@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { sql } from "@/lib/db";
 
 export const metadata = { title: "Leagues" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 async function getLeagues() {

@@ -6,6 +6,7 @@ import { Table } from "@/components/test-ui/Table";
 import { Section } from "@/components/test-ui/Section";
 import { fmtDate } from "@/lib/format";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin Test" };
 

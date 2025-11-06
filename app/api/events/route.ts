@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { desc } from "drizzle-orm";
 
-import { db } from "@/server/db/client";
-import { events } from "@/server/db/schema";
+import { hasDbEnv } from "@/lib/db";
+
+export const runtime = "nodejs";
 
 export async function GET() {
   try {
+    if (!hasDbEnv) {
+      return NextResponse.json({ events: [] });
+    }
+    const { db } = await import("@/server/db/client");
+    const { events } = await import("@/server/db/schema");
     const rows = await db
       .select({
         id: events.id,

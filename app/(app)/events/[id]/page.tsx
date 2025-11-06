@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { notFound } from "next/navigation";
 
 export const metadata = { title: "Event Details" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function EventDetailPage({

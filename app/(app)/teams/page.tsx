@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { sql } from "@/lib/db";
 
 export const metadata = { title: "Teams" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 async function getTeams() {

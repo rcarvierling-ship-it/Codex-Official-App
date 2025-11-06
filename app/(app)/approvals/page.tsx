@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ApproveRequestButton, DeclineRequestButton } from "./_components/RequestActions";
 
 export const metadata = { title: "Approvals" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function ApprovalsPage() {

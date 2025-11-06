@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export const metadata = { title: "Feature Flags" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const featureFlags = [

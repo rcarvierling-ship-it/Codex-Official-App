@@ -9,6 +9,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Assignments" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function AssignmentsPage() {

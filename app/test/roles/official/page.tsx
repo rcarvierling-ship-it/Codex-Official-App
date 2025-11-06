@@ -6,6 +6,7 @@ import { Section } from "@/components/test-ui/Section";
 import { Badge } from "@/components/test-ui/Badge";
 import { fmtDate } from "@/lib/format";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Official Test" };
 

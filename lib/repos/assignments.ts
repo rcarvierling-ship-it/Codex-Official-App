@@ -1,3 +1,4 @@
+import 'server-only';
 import { sql } from "@/lib/db";
 import { pick } from "@/lib/util/pick";
 

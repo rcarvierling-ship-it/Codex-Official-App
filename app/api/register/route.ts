@@ -2,11 +2,21 @@ import { createHash } from "crypto";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import { db } from "@/server/db/client";
-import { users } from "@/server/db/schema";
+import { hasDbEnv } from "@/lib/db";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    if (!hasDbEnv) {
+      return NextResponse.json(
+        { message: "Database not configured." },
+        { status: 503 },
+      );
+    }
+    const { db } = await import("@/server/db/client");
+    const { users } = await import("@/server/db/schema");
+    
     const { name, email, password } = await request.json();
 
     if (!name || !email || !password) {

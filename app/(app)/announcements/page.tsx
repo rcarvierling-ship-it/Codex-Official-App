@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { sql } from "@/lib/db";
 
 export const metadata = { title: "Announcements" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 async function getAnnouncements() {

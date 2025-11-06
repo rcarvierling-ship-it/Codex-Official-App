@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 export const metadata = { title: "Users & Roles" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {

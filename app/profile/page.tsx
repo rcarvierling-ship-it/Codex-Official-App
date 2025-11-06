@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export const metadata = { title: "Profile" };
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
