@@ -1,140 +1,139 @@
+// app/api/waitlist/route.ts
+export const runtime = "nodejs";
+
 import { createHash } from "crypto";
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { sql } from "@/lib/db"; // must export createClient({ connectionString }). See lib/db.ts.
 
-import { hasDbEnv } from "@/lib/db";
-import { WaitlistConfirmationEmail } from "@/emails/waitlist-confirmation";
+// -------------------------
+// Validation & rate limiting
+// -------------------------
+const waitlistPayloadSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  organization: z.string().optional().nullable(),
+  role: z.enum(["School Admin", "AD", "Coach", "Official", "Admin", "Other"]),
+  _topic: z.string().optional().nullable(), // honeypot
+});
 
 const rateLimitStore = new Map<string, number[]>();
 const WAITLIST_LIMIT_PER_HOUR = 5;
 const RATE_WINDOW_MS = 60 * 60 * 1000;
 
-const waitlistPayloadSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  organization: z.string().optional().nullable(),
-  role: z.enum([
-    "School Admin",
-    "AD",
-    "Coach",
-    "Official",
-    "Admin",
-    "Other",
-  ]),
-  _topic: z.string().optional().nullable(),
-});
-
-function getClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() ?? "127.0.0.1";
-  }
-
-  return request.headers.get("x-real-ip") ?? "127.0.0.1";
+function getClientIp(req: Request) {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0]?.trim() || "127.0.0.1";
+  return req.headers.get("x-real-ip") || "127.0.0.1";
 }
 
 function isRateLimited(ip: string, now: number) {
-  const timestamps = rateLimitStore.get(ip) ?? [];
-  const filtered = timestamps.filter((ts) => now - ts < RATE_WINDOW_MS);
-
-  if (filtered.length >= WAITLIST_LIMIT_PER_HOUR) {
-    rateLimitStore.set(ip, filtered);
+  const ts = rateLimitStore.get(ip) ?? [];
+  const recent = ts.filter((t) => now - t < RATE_WINDOW_MS);
+  if (recent.length >= WAITLIST_LIMIT_PER_HOUR) {
+    rateLimitStore.set(ip, recent);
     return true;
   }
-
-  filtered.push(now);
-  rateLimitStore.set(ip, filtered);
+  recent.push(now);
+  rateLimitStore.set(ip, recent);
   return false;
 }
 
-export const runtime = "nodejs";
-
+// -------------------------
+// Handler
+// -------------------------
 export async function POST(request: Request) {
+  // Parse & validate
   const body = await request.json().catch(() => null);
-
   const parsed = waitlistPayloadSchema.safeParse(body);
-
   if (!parsed.success) {
     return NextResponse.json(
       { message: "Invalid payload", errors: parsed.error.flatten() },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const { name, email, organization, role, _topic } = parsed.data;
 
+  // Honeypot
   if (_topic && _topic.trim().length > 0) {
     return NextResponse.json({ ok: true }, { status: 200 });
   }
 
+  // Rate limit
   const ip = getClientIp(request);
   const now = Date.now();
-
   if (isRateLimited(ip, now)) {
     return NextResponse.json(
       { message: "Too many submissions from this IP. Please try again later." },
-      { status: 429 },
+      { status: 429 }
     );
   }
 
-  const secret = process.env.NEXTAUTH_SECRET ?? "theofficialapp-secret";
+  // IP hash (stable/anonymized)
+  const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "theofficialapp-secret";
   const ipHash = createHash("sha256").update(`${ip}:${secret}`).digest("hex");
   const userAgent = request.headers.get("user-agent") ?? "unknown";
 
   try {
-    if (!hasDbEnv) {
-      return NextResponse.json(
-        { message: "Database not configured." },
-        { status: 503 },
-      );
-    }
-    const { db } = await import("@/server/db/client");
-    const { waitlist } = await import("@/server/db/schema");
-    const existing = await db
-      .select({ id: waitlist.id })
-      .from(waitlist)
-      .where(eq(waitlist.email, email))
-      .limit(1);
-
-    if (existing.length > 0) {
-      return NextResponse.json(
-        { message: "Already on the waitlist." },
-        { status: 409 },
-      );
-    }
-
-    await db.insert(waitlist).values({
-      name,
-      email,
-      org: organization ?? null,
-      role,
-      ipHash,
-      userAgent,
-    });
-  } catch (error) {
-    console.error("[api/waitlist] insert failed", error);
-    return NextResponse.json(
-      { message: "Failed to save waitlist entry." },
-      { status: 500 },
-    );
-  }
-
-  if (process.env.RESEND_API_KEY && process.env.EMAIL_FROM) {
+    // First try a schema with organization/ip_hash/user_agent/submitted_at
+    const res1 = await sql/*sql*/`
+      insert into waitlist (name, email, organization, role, ip_hash, user_agent, submitted_at)
+      values (${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
+      on conflict (email) do update set
+        name = excluded.name,
+        organization = coalesce(excluded.organization, waitlist.organization),
+        role = coalesce(excluded.role, waitlist.role),
+        ip_hash = coalesce(excluded.ip_hash, waitlist.ip_hash),
+        user_agent = coalesce(excluded.user_agent, waitlist.user_agent),
+        submitted_at = waitlist.submitted_at
+      returning id
+    `;
+    return NextResponse.json({ id: res1.rows?.[0]?.id ?? null }, { status: 201 });
+  } catch (err: any) {
+    // Fallback to alt column names (org, iphash, useragent)
+    const msg = String(err?.message ?? "");
+    console.warn("[waitlist] primary insert failed, trying fallback:", msg);
     try {
-      const { Resend } = await import("resend");
-      const resend = new Resend(process.env.RESEND_API_KEY);
-
-      await resend.emails.send({
-        from: process.env.EMAIL_FROM,
-        to: email,
-        subject: "Welcome to The Official App waitlist",
-        react: WaitlistConfirmationEmail({ name }),
-      });
-    } catch (emailError) {
-      console.warn("[api/waitlist] email send skipped", emailError);
+      const res2 = await sql/*sql*/`
+        insert into waitlist (name, email, org, role, iphash, useragent, submitted_at)
+        values (${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
+        on conflict (email) do update set
+          name = excluded.name,
+          org = coalesce(excluded.org, waitlist.org),
+          role = coalesce(excluded.role, waitlist.role)
+        returning id
+      `;
+      return NextResponse.json({ id: res2.rows?.[0]?.id ?? null }, { status: 201 });
+    } catch (err2: any) {
+      const m2 = String(err2?.message ?? "");
+      console.error("[api/waitlist] insert failed:", m2);
+      if (m2.includes("relation") && m2.includes("does not exist")) {
+        return NextResponse.json(
+          { message: "Table 'waitlist' is missing in the database." },
+          { status: 500 }
+        );
+      }
+      if (m2.includes("duplicate key") || m2.includes("unique constraint")) {
+        return NextResponse.json({ message: "Already on the waitlist." }, { status: 409 });
+      }
+      return NextResponse.json({ message: "Failed to save waitlist entry." }, { status: 500 });
     }
   }
+}
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+// Optional: simple GET to inspect recent rows while testing
+export async function GET() {
+  try {
+    const { rows } = await sql/*sql*/`
+      select id, name, email, coalesce(organization, org) as organization, role, submitted_at
+      from waitlist
+      order by submitted_at desc
+      limit 20
+    `;
+    return NextResponse.json(rows, { status: 200 });
+  } catch (err: any) {
+    console.error("[api/waitlist] list failed:", err?.message || err);
+    return NextResponse.json({ message: "Internal error" }, { status: 500 });
+  }
 }
