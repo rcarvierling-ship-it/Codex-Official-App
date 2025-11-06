@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 98%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 70%;
+    --border: 0 0% 14%;
+    --ring: 165 100% 60%;
+    --primary: 165 100% 60%;
+    --primary-foreground: 165 100% 10%;
+    --accent: 165 100% 60%;
+    --accent-foreground: 165 100% 10%;
+    --input: 0 0% 18%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 96%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 98%;
+    --radius: 0.75rem;
+  }
+
+  [data-theme='light'] {
+    --background: 0 0% 96%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --muted: 0 0% 88%;
+    --muted-foreground: 0 0% 35%;
+    --border: 0 0% 82%;
+    --ring: 165 100% 40%;
+    --primary: 165 100% 40%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 165 100% 45%;
+    --accent-foreground: 0 0% 100%;
+    --input: 0 0% 82%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 10%;
+    --destructive: 0 74% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))] antialiased;
+  }
+
+  ::selection {
+    background-color: hsl(var(--accent) / 0.3);
+    color: hsl(var(--foreground));
+  }
+}
