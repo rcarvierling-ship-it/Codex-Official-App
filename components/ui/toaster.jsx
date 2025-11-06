@@ -15,9 +15,25 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, onOpenChange, ...props }) {
+      {toasts.map(function ({ id, title, description, action, onOpenChange, open, ...props }) {
+        const handleClose = () => {
+          if (onOpenChange) {
+            onOpenChange(false);
+          }
+          dismiss(id);
+        };
+
         return (
-          <Toast key={id} {...props} onOpenChange={onOpenChange}>
+          <Toast 
+            key={id} 
+            {...props} 
+            open={open !== false}
+            onOpenChange={(isOpen) => {
+              if (!isOpen) {
+                handleClose();
+              }
+            }}
+          >
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
@@ -25,7 +41,14 @@ export function Toaster() {
               )}
             </div>
             {action}
-            <ToastClose onClick={() => dismiss(id)} aria-label="Close notification" />
+            <ToastClose 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleClose();
+              }} 
+              aria-label="Close notification" 
+            />
           </Toast>
         );
       })}

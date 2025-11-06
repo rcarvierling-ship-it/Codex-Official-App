@@ -26,9 +26,16 @@ async function ensureWaitlistTable() {
   if (waitlistTableEnsured) return;
   try {
     // Match exact Neon schema from DB_DIAGNOSTIC_SETUP.md
+    // Try to create extension first (may fail if not superuser, that's ok)
+    try {
+      await sql/*sql*/`create extension if not exists pgcrypto;`;
+    } catch (extError) {
+      // Extension may already exist or we may not have permissions - that's fine
+      console.log("[waitlist] pgcrypto extension check:", (extError as Error)?.message ?? extError);
+    }
+    
+    // Create table with all columns from Neon schema
     await sql/*sql*/`
-      create extension if not exists pgcrypto;
-      
       create table if not exists public.waitlist (
         id           uuid primary key default gen_random_uuid(),
         name         text,
@@ -42,13 +49,26 @@ async function ensureWaitlistTable() {
         useragent    text,
         submitted_at timestamptz not null default now()
       );
-      
-      create index if not exists idx_waitlist_submitted_at
-        on public.waitlist (submitted_at desc);
     `;
+    
+    // Create index if it doesn't exist
+    try {
+      await sql/*sql*/`
+        create index if not exists idx_waitlist_submitted_at
+          on public.waitlist (submitted_at desc);
+      `;
+    } catch (idxError) {
+      // Index may already exist
+      console.log("[waitlist] index creation check:", (idxError as Error)?.message ?? idxError);
+    }
+    
     waitlistTableEnsured = true;
+    console.log("[waitlist] Table ensured successfully");
   } catch (error) {
-    console.warn("[waitlist] unable to ensure table exists:", (error as Error)?.message ?? error);
+    const errorMsg = (error as Error)?.message ?? String(error);
+    console.error("[waitlist] unable to ensure table exists:", errorMsg);
+    // Don't set waitlistTableEnsured to true so we retry on next request
+    throw error; // Re-throw so caller knows table creation failed
   }
 }
 
@@ -71,7 +91,18 @@ function isRateLimited(ip: string, now: number) {
 }
 
 export async function POST(request: Request) {
-  await ensureWaitlistTable();
+  try {
+    await ensureWaitlistTable();
+  } catch (tableError) {
+    console.error("[waitlist] Table creation failed:", tableError);
+    return NextResponse.json(
+      { 
+        message: "Database setup error. Please contact support if this persists.",
+        error: "Table creation failed"
+      },
+      { status: 500 }
+    );
+  }
 
   const body = await request.json().catch(() => null);
   const parsed = waitlistPayloadSchema.safeParse(body);

@@ -316,6 +316,10 @@ function SchoolAdminDashboard({
   removePlayer,
   toastFn,
 }: any) {
+  // Subscribe to rosters from store to ensure re-renders
+  const currentRosters = useDemoStore((state) => state.rosters);
+  const activeRosters = rosters ?? currentRosters;
+  
   const officials = (users ?? []).filter((u: any) => u.role === "OFFICIAL");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(
     teams[0]?.id ?? null
@@ -339,16 +343,16 @@ function SchoolAdminDashboard({
     [teams, selectedTeamId]
   );
   const selectedRoster = useMemo(
-    () => (selectedTeamId ? rosters?.[selectedTeamId] ?? [] : []),
-    [rosters, selectedTeamId]
+    () => (selectedTeamId ? activeRosters?.[selectedTeamId] ?? [] : []),
+    [activeRosters, selectedTeamId]
   );
   const totalPlayers = useMemo(
     () =>
-      Object.values(rosters ?? {}).reduce(
+      Object.values(activeRosters ?? {}).reduce(
         (acc: number, list: any[]) => acc + (list?.length ?? 0),
         0
       ),
-    [rosters]
+    [activeRosters]
   );
   const totalTeams = teams.length;
   const totalPending = pendingRequests.length;
@@ -577,7 +581,13 @@ function SchoolAdminDashboard({
                       <Button
                         size="sm"
                         className="bg-emerald-500 hover:bg-emerald-600 text-white flex-1"
-                        onClick={() => approveRequest(req.id)}
+                        onClick={() => {
+                          approveRequest(req.id);
+                          toastFn?.({
+                            title: "Request approved",
+                            description: `${event?.title ?? "Event"} has been approved.`,
+                          });
+                        }}
                         disabled={!canApprove}
                         aria-label={`Approve request for ${event?.title ?? "event"}`}
                       >
@@ -587,7 +597,13 @@ function SchoolAdminDashboard({
                         size="sm"
                         variant="outline"
                         className="flex-1"
-                        onClick={() => declineRequest(req.id)}
+                        onClick={() => {
+                          declineRequest(req.id);
+                          toastFn?.({
+                            title: "Request declined",
+                            description: `${event?.title ?? "Event"} request has been declined.`,
+                          });
+                        }}
                         disabled={!canApprove}
                         aria-label={`Decline request for ${event?.title ?? "event"}`}
                       >

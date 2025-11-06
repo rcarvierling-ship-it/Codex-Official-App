@@ -38,11 +38,18 @@ const toastVariants = cva(
 );
 
 const Toast = React.forwardRef(({ className, variant, onOpenChange, open, ...props }, ref) => {
-  // NOTE: intentionally NOT passing onOpenChange/open to <div> (Radix-only props)
+  // Handle open state changes
+  React.useEffect(() => {
+    if (open === false && onOpenChange) {
+      onOpenChange(false);
+    }
+  }, [open, onOpenChange]);
+
   return (
     <div
       ref={ref}
       className={cn(toastVariants({ variant }), className)}
+      data-state={open ? "open" : "closed"}
       {...props}
     />
   );
