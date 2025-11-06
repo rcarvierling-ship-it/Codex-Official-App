@@ -1,11 +1,10 @@
-'use server';
-
 import { NextResponse } from "next/server";
 import { desc } from "drizzle-orm";
 
 import { db } from "@/server/db/client";
 import { events } from "@/server/db/schema";
 
+// Optional — you can remove this entirely if you prefer defaults
 export const runtime = "nodejs";
 
 export async function GET() {
