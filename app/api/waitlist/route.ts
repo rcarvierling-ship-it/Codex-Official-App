@@ -25,18 +25,26 @@ let waitlistTableEnsured = false;
 async function ensureWaitlistTable() {
   if (waitlistTableEnsured) return;
   try {
+    // Match exact Neon schema from DB_DIAGNOSTIC_SETUP.md
     await sql/*sql*/`
-      create table if not exists waitlist (
-        id uuid primary key,
-        name text not null,
-        email text not null unique,
+      create extension if not exists pgcrypto;
+      
+      create table if not exists public.waitlist (
+        id           uuid primary key default gen_random_uuid(),
+        name         text,
+        email        text unique not null,
         organization text,
-        org text,
-        role text,
-        ip_hash text,
-        user_agent text,
-        submitted_at timestamptz default now()
-      )
+        org          text,
+        role         text,
+        ip_hash      text,
+        iphash       text,
+        user_agent   text,
+        useragent    text,
+        submitted_at timestamptz not null default now()
+      );
+      
+      create index if not exists idx_waitlist_submitted_at
+        on public.waitlist (submitted_at desc);
     `;
     waitlistTableEnsured = true;
   } catch (error) {
@@ -98,86 +106,49 @@ export async function POST(request: Request) {
   const userAgent = request.headers.get("user-agent") ?? "unknown";
 
   try {
-    // Try primary schema (organization/ip_hash/user_agent)
-    const id = randomUUID();
-    const res1 = await sql/*sql*/`
-      insert into waitlist (id, name, email, organization, role, ip_hash, user_agent, submitted_at)
-      values (${id}, ${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
+    // Use exact Neon schema: org, ip_hash, user_agent, submitted_at
+    // The table has both organization/org and ip_hash/iphash and user_agent/useragent columns
+    // We'll use: org (preferred), ip_hash, user_agent, submitted_at
+    const res = await sql/*sql*/`
+      insert into waitlist (name, email, org, role, ip_hash, user_agent, submitted_at)
+      values (${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
       on conflict (email) do update set
         name = excluded.name,
-        organization = coalesce(excluded.organization, waitlist.organization),
+        org = coalesce(excluded.org, waitlist.org),
         role = coalesce(excluded.role, waitlist.role),
         ip_hash = coalesce(excluded.ip_hash, waitlist.ip_hash),
         user_agent = coalesce(excluded.user_agent, waitlist.user_agent),
         submitted_at = waitlist.submitted_at
       returning id
     `;
-    const id1 = (res1 as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
-    return NextResponse.json({ id: id1 }, { status: 201 });
+    const insertedId = (res as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
+    return NextResponse.json({ id: insertedId }, { status: 201 });
   } catch (err: any) {
-    // Fallback 1: Try with org instead of organization
-    const msg = String(err?.message ?? "");
-    console.warn("[waitlist] primary insert failed, trying fallback 1:", msg);
-    try {
-      const fallbackId = randomUUID();
-      const res2 = await sql/*sql*/`
-        insert into waitlist (id, name, email, org, role, ip_hash, user_agent, submitted_at)
-        values (${fallbackId}, ${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
-        on conflict (email) do update set
-          name = excluded.name,
-          org = coalesce(excluded.org, waitlist.org),
-          role = coalesce(excluded.role, waitlist.role),
-          ip_hash = coalesce(excluded.ip_hash, waitlist.ip_hash),
-          user_agent = coalesce(excluded.user_agent, waitlist.user_agent)
-        returning id
-      `;
-      const id2 = (res2 as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
-      return NextResponse.json({ id: id2 }, { status: 201 });
-    } catch (err2: any) {
-      // Fallback 2: Try with iphash and useragent (no underscores)
-      const m2 = String(err2?.message ?? "");
-      console.warn("[waitlist] fallback 1 failed, trying fallback 2:", m2);
-      try {
-        const fallbackId2 = randomUUID();
-        const res3 = await sql/*sql*/`
-          insert into waitlist (id, name, email, org, role, iphash, useragent, submitted_at)
-          values (${fallbackId2}, ${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
-          on conflict (email) do update set
-            name = excluded.name,
-            org = coalesce(excluded.org, waitlist.org),
-            role = coalesce(excluded.role, waitlist.role),
-            iphash = coalesce(excluded.iphash, waitlist.iphash),
-            useragent = coalesce(excluded.useragent, waitlist.useragent)
-          returning id
-        `;
-        const id3 = (res3 as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
-        return NextResponse.json({ id: id3 }, { status: 201 });
-      } catch (err3: any) {
-        const m3 = String(err3?.message ?? "");
-        console.error("[api/waitlist] all insert attempts failed:", m3);
-        if (m3.includes("relation") && m3.includes("does not exist")) {
-          return NextResponse.json(
-            { message: "Table 'waitlist' is missing in the database." },
-            { status: 500 }
-          );
-        }
-        if (m3.includes("duplicate key") || m3.includes("unique constraint")) {
-          return NextResponse.json({ message: "Already on the waitlist." }, { status: 409 });
-        }
-        return NextResponse.json({ 
-          message: "Failed to save waitlist entry.", 
-          error: m3 
-        }, { status: 500 });
-      }
+    const errorMsg = String(err?.message ?? "");
+    console.error("[api/waitlist] insert failed:", errorMsg);
+    
+    if (errorMsg.includes("relation") && errorMsg.includes("does not exist")) {
+      return NextResponse.json(
+        { message: "Table 'waitlist' is missing in the database." },
+        { status: 500 }
+      );
     }
+    if (errorMsg.includes("duplicate key") || errorMsg.includes("unique constraint")) {
+      return NextResponse.json({ message: "Already on the waitlist." }, { status: 409 });
+    }
+    return NextResponse.json({ 
+      message: "Failed to save waitlist entry.", 
+      error: errorMsg 
+    }, { status: 500 });
   }
 }
 
 export async function GET() {
   try {
     await ensureWaitlistTable();
+    // Use org column (matches Neon schema) and submitted_at
     const { rows } = await sql/*sql*/`
-      select id, name, email, coalesce(organization, org) as organization, role, submitted_at
+      select id, name, email, org as organization, role, submitted_at
       from waitlist
       order by submitted_at desc
       limit 20
