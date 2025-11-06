@@ -7,6 +7,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import {
   personaOptions,
@@ -38,12 +39,18 @@ export default function DemoOverviewPage() {
   const leagues = useDemoStore((state) => state.leagues) ?? [];
   const schools = useDemoStore((state) => state.schools) ?? [];
   const teams = useDemoStore((state) => state.teams) ?? [];
+  const rosters = useDemoStore((state) => state.rosters) ?? {};
   const venues = useDemoStore((state) => state.venues) ?? [];
   const currentPersona = useDemoStore((state) => state.currentPersona);
   const currentRole = useDemoStore((state) => state.currentRole);
   const setPersona = useDemoStore((state) => state.setPersona);
   const approveRequest = useDemoStore((state) => state.approveRequest);
   const declineRequest = useDemoStore((state) => state.declineRequest);
+  const addPlayerToTeam = useDemoStore((state) => state.addPlayerToTeam);
+  const removePlayerFromTeam = useDemoStore((state) => state.removePlayerFromTeam);
+  const createLeague = useDemoStore((state) => state.createLeague);
+  const addAssignment = useDemoStore((state) => state.addAssignment);
+  const requestToWork = useDemoStore((state) => state.requestToWork);
 
   const personaMeta = personaOptions.find(p => p.label === currentPersona);
 
@@ -68,6 +75,51 @@ export default function DemoOverviewPage() {
   const recentActivity = (activity ?? []).slice(0, 3);
 
   const canApprove = ["SUPER_ADMIN", "ADMIN", "AD"].includes(currentRole);
+  const officials = useMemo(
+    () => (users ?? []).filter((user: any) => user.role === "OFFICIAL"),
+    [users]
+  );
+  const handleCreateLeague = () => {
+    const created = createLeague?.();
+    if (created) {
+      toast({
+        title: "League added",
+        description: `${created.name} is ready for scheduling.`,
+      });
+    }
+  };
+
+  const handleAssignOfficial = (eventId: string) => {
+    const event = events.find((evt: any) => evt.id === eventId);
+    const existingAssignments = (assignments ?? []).filter(
+      (assignment: any) => assignment.eventId === eventId
+    );
+    const availableOfficial = officials.find(
+      (official: any) =>
+        !existingAssignments.some((assignment: any) => assignment.userId === official.id)
+    );
+
+    if (!availableOfficial) {
+      toast({
+        title: "No available officials",
+        description: "Everyone on the roster is already covering this event.",
+      });
+      return;
+    }
+
+    addAssignment({
+      id: `asn_demo_${Math.random().toString(36).slice(2, 9)}`,
+      eventId,
+      userId: availableOfficial.id,
+      position: "Official",
+      confirmedAt: new Date().toISOString(),
+    });
+
+    toast({
+      title: "Official assigned",
+      description: `${availableOfficial.name} will cover ${event?.title ?? "the event"}.`,
+    });
+  };
   
   const handleApproveRequest = (id: string) => {
     if (!canApprove) {
@@ -137,6 +189,7 @@ export default function DemoOverviewPage() {
         <SchoolAdminDashboard
           teams={teams}
           schools={schools}
+          rosters={rosters}
           pendingRequests={pendingRequests}
           upcomingEvents={upcomingEvents}
           recentActivity={recentActivity}
@@ -144,6 +197,9 @@ export default function DemoOverviewPage() {
           approveRequest={handleApproveRequest}
           declineRequest={handleDeclineRequest}
           canApprove={canApprove}
+          addPlayer={addPlayerToTeam}
+          removePlayer={removePlayerFromTeam}
+          toastFn={toast}
         />
       )}
 
@@ -154,6 +210,10 @@ export default function DemoOverviewPage() {
           assignments={assignments}
           recentActivity={recentActivity}
           users={users}
+          requests={requests}
+          onCreateLeague={handleCreateLeague}
+          onAssignOfficial={handleAssignOfficial}
+          toastFn={toast}
         />
       )}
 
@@ -164,6 +224,9 @@ export default function DemoOverviewPage() {
           requests={requests}
           recentActivity={recentActivity}
           users={users}
+          rosters={rosters}
+          toastFn={toast}
+          requestToWork={requestToWork}
         />
       )}
 
@@ -174,9 +237,11 @@ export default function DemoOverviewPage() {
           teams={teams}
           assignments={assignments}
           recentActivity={recentActivity}
+          users={users}
           approveRequest={handleApproveRequest}
           declineRequest={handleDeclineRequest}
           canApprove={canApprove}
+          toastFn={toast}
         />
       )}
 
@@ -211,6 +276,7 @@ export default function DemoOverviewPage() {
 function SchoolAdminDashboard({
   teams,
   schools,
+  rosters,
   pendingRequests,
   upcomingEvents,
   recentActivity,
@@ -218,8 +284,97 @@ function SchoolAdminDashboard({
   approveRequest,
   declineRequest,
   canApprove,
+  addPlayer,
+  removePlayer,
+  toastFn,
 }: any) {
-  const officials = (users ?? []).filter((u: any) => u.role === 'OFFICIAL');
+  const officials = (users ?? []).filter((u: any) => u.role === "OFFICIAL");
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(
+    teams[0]?.id ?? null
+  );
+  const [playerNumber, setPlayerNumber] = useState("#00");
+  const [playerName, setPlayerName] = useState("");
+  const [playerPosition, setPlayerPosition] = useState("Guard");
+  const [playerYear, setPlayerYear] = useState("12th");
+
+  useEffect(() => {
+    if (!selectedTeamId || !teams.some((team: any) => team.id === selectedTeamId)) {
+      setSelectedTeamId(teams[0]?.id ?? null);
+    }
+  }, [teams, selectedTeamId]);
+
+  const selectedTeam = useMemo(
+    () =>
+      selectedTeamId
+        ? teams.find((team: any) => team.id === selectedTeamId) ?? null
+        : null,
+    [teams, selectedTeamId]
+  );
+  const selectedRoster = useMemo(
+    () => (selectedTeamId ? rosters?.[selectedTeamId] ?? [] : []),
+    [rosters, selectedTeamId]
+  );
+  const totalPlayers = useMemo(
+    () =>
+      Object.values(rosters ?? {}).reduce(
+        (acc: number, list: any[]) => acc + (list?.length ?? 0),
+        0
+      ),
+    [rosters]
+  );
+  const totalTeams = teams.length;
+  const totalPending = pendingRequests.length;
+  const totalUpcomingEvents = upcomingEvents.length;
+
+  const handleAddPlayer = () => {
+    if (!selectedTeamId) {
+      toastFn?.({
+        title: "Select a team",
+        description: "Pick a roster before adding athletes.",
+      });
+      return;
+    }
+    if (!playerName.trim()) {
+      toastFn?.({
+        title: "Player name required",
+        description: "Add a name to keep the roster organized.",
+      });
+      return;
+    }
+
+    const created = addPlayer?.(selectedTeamId, {
+      number: playerNumber.trim() || "#00",
+      name: playerName.trim(),
+      position: playerPosition.trim() || "Guard",
+      classYear: playerYear.trim() || "12th",
+    });
+
+    if (created) {
+      toastFn?.({
+        title: "Player added",
+        description: `${created.name} joined ${
+          selectedTeam?.name ?? "the team"
+        }.`,
+      });
+      setPlayerNumber("#00");
+      setPlayerName("");
+      setPlayerPosition("Guard");
+      setPlayerYear("12th");
+    }
+  };
+
+  const handleRemovePlayer = (playerId: string) => {
+    if (!selectedTeamId) return;
+    const player = selectedRoster.find((entry: any) => entry.id === playerId);
+    removePlayer?.(selectedTeamId, playerId);
+    toastFn?.({
+      title: "Player removed",
+      description: `${player?.name ?? "Player"} removed from ${
+        selectedTeam?.name ?? "the roster"
+      }.`,
+    });
+  };
+
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-3">
@@ -231,19 +386,37 @@ function SchoolAdminDashboard({
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <div className="text-3xl font-semibold text-emerald-500">8</div>
+              <div className="text-3xl font-semibold text-emerald-500">
+                {totalTeams}
+              </div>
               <div className="text-sm text-muted-foreground">Active Teams</div>
             </div>
-            <div className="space-y-2">
-              {teams.slice(0, 3).map((team: any) => (
-                <div key={team.id} className="rounded-lg border bg-background/60 p-3">
-                  <div className="font-medium text-foreground">{team.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {schools.find((s: any) => s.id === team.schoolId)?.mascot || 'Team'}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {teams.length === 0 ? (
+              <div className="rounded-lg border bg-background/60 p-3 text-sm text-muted-foreground">
+                No teams yet. Generate sample data to explore scheduling.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {teams.slice(0, 3).map((team: any) => {
+                  const school = schools.find((s: any) => s.id === team.schoolId);
+                  const rosterCount = (rosters?.[team.id] ?? []).length;
+                  return (
+                    <div
+                      key={team.id}
+                      className="rounded-lg border bg-background/60 p-3"
+                    >
+                      <div className="font-medium text-foreground">
+                        {team.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground flex items-center justify-between">
+                        <span>{school?.mascot ?? "Program"}</span>
+                        <span>{rosterCount} players</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -253,24 +426,88 @@ function SchoolAdminDashboard({
               <span>Team Roster</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {[
-              { number: "#23", name: "Michael Jordan", position: "Guard • 12th" },
-              { number: "#10", name: "Kobe Bryant", position: "Guard • 11th" },
-              { number: "#32", name: "Magic Johnson", position: "Forward • 12th" },
-              { number: "#33", name: "Larry Bird", position: "Forward • 11th" },
-            ].map((player, i) => (
-              <div key={i} className="rounded-lg border bg-background/60 p-3">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-emerald-500">{player.number}</span>
-                  <span className="text-foreground">{player.name}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">{player.position}</div>
-              </div>
-            ))}
-            <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white mt-2">
+          <CardContent className="space-y-3">
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Select team
+              </span>
+              <select
+                value={selectedTeamId ?? ""}
+                onChange={(event) =>
+                  setSelectedTeamId(event.target.value || null)
+                }
+                className="rounded-lg border bg-background px-3 py-2 text-sm text-foreground focus:border-emerald-500 focus:outline-none"
+              >
+                {teams.map((team: any) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Input
+                value={playerNumber}
+                onChange={(event) => setPlayerNumber(event.target.value)}
+                placeholder="#12"
+              />
+              <Input
+                value={playerName}
+                onChange={(event) => setPlayerName(event.target.value)}
+                placeholder="Player name"
+                className="sm:col-span-2"
+              />
+              <Input
+                value={playerPosition}
+                onChange={(event) => setPlayerPosition(event.target.value)}
+                placeholder="Position"
+              />
+              <Input
+                value={playerYear}
+                onChange={(event) => setPlayerYear(event.target.value)}
+                placeholder="Class"
+              />
+            </div>
+            <Button
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white mt-2"
+              onClick={handleAddPlayer}
+            >
               <span className="mr-2">+</span> Add Player
             </Button>
+            {selectedRoster.length === 0 ? (
+              <div className="rounded-lg border bg-background/60 p-3 text-sm text-muted-foreground">
+                No players on this roster yet.
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {selectedRoster.map((player: any) => (
+                  <li
+                    key={player.id}
+                    className="flex items-center justify-between rounded-lg border bg-background/60 p-3"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-emerald-500">
+                          {player.number}
+                        </span>
+                        <span className="text-foreground">{player.name}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {player.position} • {player.classYear}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs text-muted-foreground hover:text-red-500"
+                      onClick={() => handleRemovePlayer(player.id)}
+                    >
+                      Remove
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
 
@@ -281,34 +518,54 @@ function SchoolAdminDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {pendingRequests.slice(0, 1).map((req: any) => {
-              const event = upcomingEvents.find((e: any) => e.id === req.eventId);
-              return (
-                <div key={req.id} className="rounded-lg border bg-background/60 p-3">
-                  <div className="font-medium text-foreground">{event?.title || 'Warriors vs Eagles'}</div>
-                  <div className="text-xs text-muted-foreground">Requested by Coach Smith</div>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      size="sm"
-                      className="bg-emerald-500 hover:bg-emerald-600 text-white flex-1"
-                      onClick={() => approveRequest(req.id)}
-                      disabled={!canApprove}
-                    >
-                      ✓ Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => declineRequest(req.id)}
-                      disabled={!canApprove}
-                    >
-                      ✕ Deny
-                    </Button>
+            {pendingRequests.length === 0 ? (
+              <div className="rounded-lg border bg-background/60 p-3 text-sm text-muted-foreground">
+                All requests are handled. Great work!
+              </div>
+            ) : (
+              pendingRequests.slice(0, 2).map((req: any) => {
+                const event = upcomingEvents.find((e: any) => e.id === req.eventId);
+                const requester = users.find((user: any) => user.id === req.userId);
+                return (
+                  <div
+                    key={req.id}
+                    className="rounded-lg border bg-background/60 p-3"
+                  >
+                    <div className="font-medium text-foreground">
+                      {event?.title ?? "Pending matchup"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Requested by {requester?.name ?? "Coach"} •{" "}
+                      {format(new Date(req.submittedAt), "MMM d, h:mm a")}
+                    </div>
+                    {req.message && (
+                      <div className="mt-2 text-xs text-muted-foreground line-clamp-2">
+                        {req.message}
+                      </div>
+                    )}
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white flex-1"
+                        onClick={() => approveRequest(req.id)}
+                        disabled={!canApprove}
+                      >
+                        ✓ Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => declineRequest(req.id)}
+                        disabled={!canApprove}
+                      >
+                        ✕ Deny
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </CardContent>
         </Card>
       </div>
@@ -324,8 +581,12 @@ function SchoolAdminDashboard({
             {officials.slice(0, 6).map((o: any) => (
               <div key={o.id} className="rounded-lg border bg-background/60 p-3">
                 <div className="font-medium text-foreground">{o.name}</div>
-                <div className="text-xs text-muted-foreground">{o.sports?.join(', ') || 'Multi-sport'}</div>
-                <div className="mt-1 text-xs text-muted-foreground">Avail: {o.availability?.join(', ') || '—'}</div>
+                <div className="text-xs text-muted-foreground">
+                  {o.sports?.join(", ") || "Multi-sport"}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Avail: {o.availability?.join(", ") || "—"}
+                </div>
               </div>
             ))}
           </div>
@@ -341,19 +602,29 @@ function SchoolAdminDashboard({
         <CardContent>
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-semibold text-emerald-500">12</div>
+              <div className="text-2xl font-semibold text-emerald-500">
+                {totalTeams}
+              </div>
               <div className="text-xs text-muted-foreground">Total Teams</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-semibold text-emerald-500">156</div>
-              <div className="text-xs text-muted-foreground">Student Athletes</div>
+              <div className="text-2xl font-semibold text-emerald-500">
+                {totalPlayers}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Student Athletes
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-semibold text-orange-500">48</div>
+              <div className="text-2xl font-semibold text-orange-500">
+                {totalUpcomingEvents}
+              </div>
               <div className="text-xs text-muted-foreground">Upcoming Events</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-semibold text-orange-500">3</div>
+              <div className="text-2xl font-semibold text-orange-500">
+                {totalPending}
+              </div>
               <div className="text-xs text-muted-foreground">Pending Approvals</div>
             </div>
           </div>
@@ -366,8 +637,25 @@ function SchoolAdminDashboard({
 }
 
 // League Admin Dashboard
-function LeagueAdminDashboard({ leagues, events, assignments, recentActivity, users }: any) {
+function LeagueAdminDashboard({
+  leagues,
+  events,
+  assignments,
+  recentActivity,
+  users,
+  requests,
+  onCreateLeague,
+  onAssignOfficial,
+  toastFn,
+}: any) {
   const officials = (users ?? []).filter((u: any) => u.role === 'OFFICIAL');
+  const pendingRequests = (requests ?? []).filter((request: any) => request.status === 'PENDING');
+  const participatingSchools = new Set(
+    (events ?? []).map((event: any) => event.schoolId)
+  ).size;
+  const totalEvents = events.length;
+  const assignedOfficials = assignments.length;
+  const estimatedPayout = assignments.length * 75;
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-2">
@@ -378,22 +666,37 @@ function LeagueAdminDashboard({ leagues, events, assignments, recentActivity, us
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {leagues.slice(0, 3).map((league: any) => (
-              <div key={league.id} className="rounded-lg border bg-background/60 p-4 relative">
-                <div className="font-medium text-foreground">{league.name}</div>
-                <div className="text-sm text-muted-foreground">Basketball • Fall 2024 • Varsity</div>
-                <div className="flex gap-2 mt-2">
-                  <Badge variant="outline" className="text-xs">{league.region}</Badge>
-                  <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs">Verified</Badge>
+            {leagues.slice(0, 3).map((league: any) => {
+              const leagueEvents = events.filter((event: any) => event.leagueId === league.id);
+              const leaguePending = pendingRequests.filter((req: any) => {
+                const event = events.find((evt: any) => evt.id === req.eventId);
+                return event?.leagueId === league.id;
+              });
+              return (
+                <div key={league.id} className="rounded-lg border bg-background/60 p-4 relative">
+                  <div className="font-medium text-foreground">{league.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {leagueEvents.length} scheduled events • {league.region}
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant="outline" className="text-xs">{league.region}</Badge>
+                    <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs">Verified</Badge>
+                  </div>
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    {leaguePending.length} pending requests awaiting review
+                  </div>
+                  <div className="absolute top-3 right-3">
+                    <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="absolute top-3 right-3">
-                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-              </div>
-            ))}
-            <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
+              );
+            })}
+            <Button
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+              onClick={onCreateLeague}
+            >
               + Create New League
             </Button>
           </CardContent>
@@ -413,8 +716,25 @@ function LeagueAdminDashboard({ leagues, events, assignments, recentActivity, us
                   {format(new Date(event.start), "MMM d, yyyy")} • Needs 2 officials
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white">Assign Official</Button>
-                  <Button size="sm" variant="outline">View Requests</Button>
+                  <Button
+                    size="sm"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                    onClick={() => onAssignOfficial(event.id)}
+                  >
+                    Assign Official
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      toastFn?.({
+                        title: "Request queue",
+                        description: `${pendingRequests.filter((req: any) => req.eventId === event.id).length} pending request(s) for this event.`,
+                      })
+                    }
+                  >
+                    View Requests
+                  </Button>
                 </div>
               </div>
             ))}
@@ -449,19 +769,27 @@ function LeagueAdminDashboard({ leagues, events, assignments, recentActivity, us
         <CardContent>
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-semibold text-emerald-500">24</div>
+              <div className="text-2xl font-semibold text-emerald-500">
+                {participatingSchools}
+              </div>
               <div className="text-xs text-muted-foreground">Participating Schools</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-semibold text-emerald-500">89</div>
+              <div className="text-2xl font-semibold text-emerald-500">
+                {totalEvents}
+              </div>
               <div className="text-xs text-muted-foreground">Total Events</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-semibold text-emerald-500">142</div>
+              <div className="text-2xl font-semibold text-emerald-500">
+                {assignedOfficials}
+              </div>
               <div className="text-xs text-muted-foreground">Officials Assigned</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-semibold text-emerald-500">$18.5K</div>
+              <div className="text-2xl font-semibold text-emerald-500">
+                {estimatedPayout > 0 ? `$${estimatedPayout.toLocaleString()}` : "$0"}
+              </div>
               <div className="text-xs text-muted-foreground">Total Payments</div>
             </div>
           </div>
@@ -474,8 +802,41 @@ function LeagueAdminDashboard({ leagues, events, assignments, recentActivity, us
 }
 
 // Coach Dashboard
-function CoachDashboard({ events, teams, requests, recentActivity, users }: any) {
+function CoachDashboard({
+  events,
+  teams,
+  requests,
+  recentActivity,
+  users,
+  rosters,
+  toastFn,
+  requestToWork,
+}: any) {
   const officials = (users ?? []).filter((u: any) => u.role === 'OFFICIAL');
+  const primaryTeam = teams[0];
+  const teamRoster = primaryTeam ? rosters?.[primaryTeam.id] ?? [] : [];
+
+  const handleSyncSchedule = (eventTitle: string) => {
+    toastFn?.({
+      title: "Schedule synced",
+      description: `${eventTitle} pushed to team calendar.`,
+    });
+  };
+
+  const handleRequestCoverage = (eventId: string, eventTitle: string) => {
+    requestToWork?.(eventId, `Coach request for ${eventTitle}`);
+    toastFn?.({
+      title: "Coverage requested",
+      description: `Admins notified that ${eventTitle} needs officials.`,
+    });
+  };
+
+  const handleSendMessage = () => {
+    toastFn?.({
+      title: "Message sent",
+      description: "Your staff received the update in their inbox.",
+    });
+  };
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-2">
@@ -487,7 +848,7 @@ function CoachDashboard({ events, teams, requests, recentActivity, users }: any)
           </CardHeader>
           <CardContent className="space-y-3">
             {events.slice(0, 5).map((event: any) => (
-              <div key={event.id} className="rounded-lg border bg-background/60 p-3 flex items-center justify-between">
+              <div key={event.id} className="rounded-lg border bg-background/60 p-3 flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="font-medium text-foreground">{event.title}</div>
                   <div className="text-xs text-muted-foreground">
@@ -498,11 +859,26 @@ function CoachDashboard({ events, teams, requests, recentActivity, users }: any)
                     <span>Central High School Gym</span>
                   </div>
                 </div>
-                <button className="p-2 hover:bg-muted rounded">
-                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
+                <div className="flex flex-col items-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => handleSyncSchedule(event.title)}
+                  >
+                    <span className="sr-only">Sync schedule</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </Button>
+                  <Button
+                    size="xs"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                    onClick={() => handleRequestCoverage(event.id, event.title)}
+                  >
+                    Request Coverage
+                  </Button>
+                </div>
               </div>
             ))}
           </CardContent>
@@ -525,7 +901,10 @@ function CoachDashboard({ events, teams, requests, recentActivity, users }: any)
               <div className="font-medium text-foreground">League Admin • 2h ago</div>
               <div className="text-sm text-muted-foreground mt-1">"Playoff schedule has been updated. Please review..."</div>
             </div>
-            <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
+            <Button
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+              onClick={handleSendMessage}
+            >
               <span className="mr-2">✈</span> New Message
             </Button>
           </CardContent>
@@ -535,28 +914,27 @@ function CoachDashboard({ events, teams, requests, recentActivity, users }: any)
       <Card className="bg-card/80">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <span>My Team Roster</span>
+            <span>{primaryTeam?.name ?? "My Team Roster"}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 gap-3">
-            {[
-              { number: "#23", name: "Michael Jordan", position: "Guard" },
-              { number: "#10", name: "Kobe Bryant", position: "Guard" },
-              { number: "#34", name: "Shaquille O'Neal", position: "Center" },
-              { number: "#24", name: "LeBron James", position: "Forward" },
-              { number: "#32", name: "Magic Johnson", position: "Forward" },
-              { number: "#30", name: "Stephen Curry", position: "Guard" },
-              { number: "#33", name: "Larry Bird", position: "Forward" },
-              { number: "#35", name: "Kevin Durant", position: "Forward" },
-            ].map((player, i) => (
-              <div key={i} className="rounded-lg border bg-background/60 p-3 text-center">
-                <div className="text-2xl font-semibold text-emerald-500">{player.number}</div>
-                <div className="text-sm font-medium text-foreground mt-1">{player.name}</div>
-                <div className="text-xs text-muted-foreground">{player.position}</div>
-              </div>
-            ))}
-          </div>
+          {teamRoster.length === 0 ? (
+            <div className="rounded-lg border bg-background/60 p-4 text-sm text-muted-foreground text-center">
+              No roster data yet. Add players from the School Admin view to see them here.
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-3">
+              {teamRoster.map((player: any) => (
+                <div key={player.id} className="rounded-lg border bg-background/60 p-3 text-center">
+                  <div className="text-2xl font-semibold text-emerald-500">{player.number}</div>
+                  <div className="text-sm font-medium text-foreground mt-1">{player.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {player.position} • {player.classYear}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -589,11 +967,24 @@ function AthleticDirectorDashboard({
   requests,
   teams,
   assignments,
+  users,
   recentActivity,
   approveRequest,
   declineRequest,
   canApprove,
+  toastFn,
 }: any) {
+  const pendingApprovals = (requests ?? []).slice(0, 4);
+  const eventsById = new Map(
+    (events ?? []).map((event: any) => [event.id, event])
+  );
+  const teamsById = new Map(
+    (teams ?? []).map((team: any) => [team.id, team])
+  );
+  const usersById = new Map(
+    (users ?? []).map((user: any) => [user.id, user])
+  );
+
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-2">
@@ -604,25 +995,67 @@ function AthleticDirectorDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {events.slice(0, 4).map((event: any) => (
-              <div key={event.id} className="rounded-lg border bg-background/60 p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-medium text-foreground">{event.title}</div>
-                  <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs">published</Badge>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {format(new Date(event.start), "MMM d, yyyy")} • $75
-                </div>
-                <div className="flex gap-2 mt-2">
-                  <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white">
-                    ✓ Approve
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <span className="mr-1">📄</span> Edit
-                  </Button>
-                </div>
+            {pendingApprovals.length === 0 ? (
+              <div className="rounded-lg border bg-background/60 p-3 text-sm text-muted-foreground">
+                All caught up—no pending approvals right now.
               </div>
-            ))}
+            ) : (
+              pendingApprovals.map((request: any) => {
+                const event = eventsById.get(request.eventId);
+                const team = event ? teamsById.get(event.homeTeamId) : null;
+                const requester = usersById.get(request.userId);
+                return (
+                  <div key={request.id} className="rounded-lg border bg-background/60 p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-medium text-foreground">{event?.title ?? "Event pending scheduling"}</div>
+                      <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs">
+                        pending
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {event
+                        ? `${format(new Date(event.start), "MMM d, yyyy")} • ${team?.name ?? "Program"}`
+                        : "Awaiting final schedule"}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Requested by {requester?.name ?? "Coach"} — {request.message}
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        size="sm"
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                        onClick={() => approveRequest(request.id)}
+                        disabled={!canApprove}
+                      >
+                        ✓ Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          declineRequest(request.id)
+                        }
+                        disabled={!canApprove}
+                      >
+                        ✕ Decline
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          toastFn?.({
+                            title: "Edit request",
+                            description: "The full product opens the scheduling modal to edit this event.",
+                          })
+                        }
+                      >
+                        <span className="mr-1">📄</span> Edit
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </CardContent>
         </Card>
 
@@ -633,26 +1066,41 @@ function AthleticDirectorDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {[
-              { name: "John Doe", event: "Warriors vs Eagles", amount: "$75", status: "pending" },
-              { name: "Jane Smith", event: "Lions vs Tigers", amount: "$60", status: "paid" },
-              { name: "Mike Johnson", event: "Spartans vs Trojans", amount: "$65", status: "pending" },
-            ].map((payment, i) => (
-              <div key={i} className="rounded-lg border bg-background/60 p-3 flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-foreground">{payment.name}</div>
-                  <div className="text-sm text-muted-foreground">{payment.event}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium text-foreground">{payment.amount}</div>
-                  {payment.status === 'paid' ? (
-                    <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs">paid</Badge>
-                  ) : (
-                    <div className="text-xs text-muted-foreground">pending</div>
-                  )}
-                </div>
+            {assignments.length === 0 ? (
+              <div className="rounded-lg border bg-background/60 p-3 text-sm text-muted-foreground">
+                No official payments pending—great job staying current.
               </div>
-            ))}
+            ) : (
+              assignments.slice(0, 3).map((assignment: any) => {
+                const official = usersById.get(assignment.userId);
+                const event = eventsById.get(assignment.eventId);
+                const hoursSinceConfirm =
+                  (Date.now() - new Date(assignment.confirmedAt).getTime()) /
+                  (1000 * 60 * 60);
+                const status = hoursSinceConfirm > 48 ? "paid" : "pending";
+                const amount = "$75";
+                return (
+                  <div key={assignment.id} className="rounded-lg border bg-background/60 p-3 flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-foreground">{official?.name ?? "Official"}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {event?.title ?? "Event"} • {format(new Date(assignment.confirmedAt), "MMM d")}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-foreground">{amount}</div>
+                      {status === "paid" ? (
+                        <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs">
+                          paid
+                        </Badge>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">pending</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </CardContent>
         </Card>
       </div>
@@ -669,7 +1117,17 @@ function AthleticDirectorDashboard({
               <div key={team.id} className="rounded-lg border bg-background/60 p-3 text-center">
                 <div className="font-medium text-foreground">{team.name}</div>
                 <div className="text-sm text-muted-foreground mt-1">Coach: Assigned</div>
-                <Button size="sm" variant="outline" className="w-full mt-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full mt-2"
+                  onClick={() =>
+                    toastFn?.({
+                      title: "Coach assignment",
+                      description: `${team.name} coach assignment is managed from the admin console.`,
+                    })
+                  }
+                >
                   Assign Coach
                 </Button>
               </div>
@@ -774,10 +1232,13 @@ function OfficialDashboard({ events, assignments, recentActivity }: any) {
 
 // Recent Activity Component
 function RecentActivitySection({ activity }: any) {
-  const roleTags: Record<string, string> = {
-    'New schedule request received': 'School Admin',
-    'Event approved successfully': 'Athletic Director',
-    'Official assigned to event': 'League Admin',
+  const resolveTag = (message: string) => {
+    const lower = message?.toLowerCase() ?? "";
+    if (lower.includes("league")) return "League Admin";
+    if (lower.includes("player") || lower.includes("roster")) return "School Admin";
+    if (lower.includes("request") || lower.includes("approved")) return "Athletic Director";
+    if (lower.includes("official")) return "Officials";
+    return "System";
   };
 
   return (
@@ -802,7 +1263,7 @@ function RecentActivitySection({ activity }: any) {
               </div>
             </div>
             <Badge variant="outline" className="text-xs">
-              {roleTags[entry.message] || 'System'}
+              {resolveTag(entry.message)}
             </Badge>
           </div>
         ))}

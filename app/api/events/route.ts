@@ -1,12 +1,24 @@
 import { NextResponse } from "next/server";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 import { hasDbEnv } from "@/lib/db";
+import { getSessionServer } from "@/lib/auth";
+import { getUserSchool } from "@/lib/repos/schools";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
+    const session = await getSessionServer();
+    if (!session?.user?.email) {
+      return NextResponse.json({ events: [] }, { status: 401 });
+    }
+
+    const membership = await getUserSchool(session.user.email);
+    if (!membership?.schoolId) {
+      return NextResponse.json({ events: [] }, { status: 403 });
+    }
+
     if (!hasDbEnv) {
       return NextResponse.json({ events: [] });
     }
@@ -21,8 +33,10 @@ export async function GET() {
         venueId: events.venueId,
         teamHomeId: events.teamHomeId,
         teamAwayId: events.teamAwayId,
+        schoolId: events.schoolId,
       })
       .from(events)
+      .where(eq(events.schoolId, membership.schoolId))
       .orderBy(desc(events.startTs))
       .limit(50);
 

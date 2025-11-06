@@ -1,5 +1,4 @@
 import { format } from "date-fns";
-import { redirect } from "next/navigation";
 import { sql } from "drizzle-orm";
 
 import { Sidebar } from "@/components/Sidebar";
@@ -8,21 +7,11 @@ import { cn } from "@/lib/utils";
 import { requireRole } from "@/lib/auth-helpers";
 import { getRequests } from "@lib/repos/requests";
 import { hasDbEnv } from "@/lib/db";
+import { getEvents } from "@/lib/repos/events";
+import { getUsers } from "@/lib/repos/users";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-async function getMetricCount<T>(table: T) {
-  try {
-    if (!hasDbEnv) return 0;
-    const { db } = await import("@/server/db/client");
-    const result = await db.select({ value: sql<number>`count(*)` }).from(table as any);
-    return Number(result[0]?.value ?? 0);
-  } catch (error) {
-    console.warn("[admin] count failed", error);
-    return 0;
-  }
-}
 
 async function getWaitlistEntries() {
   try {
@@ -50,23 +39,38 @@ async function getWaitlistEntries() {
 }
 
 export default async function AdminPage() {
-  const { role } = await requireRole("ADMIN");
-  const [eventsCount, usersCount, waitlistCount, waitlistRows, requests] = await Promise.all([
-    hasDbEnv ? (async () => {
-      const { events } = await import("@/server/db/schema");
-      return getMetricCount(events);
-    })() : Promise.resolve(0),
-    hasDbEnv ? (async () => {
-      const { users } = await import("@/server/db/schema");
-      return getMetricCount(users);
-    })() : Promise.resolve(0),
-    hasDbEnv ? (async () => {
-      const { waitlist } = await import("@/server/db/schema");
-      return getMetricCount(waitlist);
-    })() : Promise.resolve(0),
+  const { role, session } = await requireRole("ADMIN");
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+  const activeSchoolName = (session.user as any)?.school?.name ?? "";
+
+  const [events, users, waitlistRowsRaw, requests] = await Promise.all([
+    getEvents(),
+    getUsers(),
     getWaitlistEntries(),
     getRequests(),
   ]);
+
+  const eventsForSchool = activeSchoolId
+    ? events.filter((event) => event.schoolId === activeSchoolId)
+    : events;
+  const usersForSchool = activeSchoolId
+    ? users.filter((user) =>
+        Array.isArray(user.schoolIds) ? user.schoolIds.includes(activeSchoolId) : true
+      )
+    : users;
+
+  const waitlistRows = waitlistRowsRaw.filter((entry: any) => {
+    if (!activeSchoolName) return true;
+    if (!entry.org) return false;
+    return String(entry.org).toLowerCase().includes(activeSchoolName.toLowerCase());
+  });
+
+  const eventIdSet = new Set(eventsForSchool.map((event) => event.id));
+  const requestsForSchool = requests.filter((request) => eventIdSet.has(request.eventId));
+
+  const eventsCount = eventsForSchool.length;
+  const usersCount = usersForSchool.length;
+  const waitlistCount = waitlistRows.length;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-12 lg:flex-row">
@@ -160,17 +164,17 @@ export default async function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Latest requests</h2>
             <span className="text-xs text-muted-foreground">
-              Pulling {requests.length} most recent requests
+              Pulling {requestsForSchool.length} most recent requests
             </span>
           </div>
           <div className="overflow-hidden rounded-2xl border border-border bg-card/80 shadow-lg">
-            {requests.length === 0 ? (
+            {requestsForSchool.length === 0 ? (
               <div className="px-6 py-8 text-sm text-muted-foreground">
                 No requests found. Seed your database or capture requests via the API to see them here.
               </div>
             ) : (
               <ul className="divide-y divide-border/60">
-                {(requests ?? []).slice(0, 10).map((request) => (
+                {requestsForSchool.slice(0, 10).map((request) => (
                   <li
                     key={request.id}
                     className="flex flex-col gap-1 px-6 py-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between"

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getAuthRole } from "@/lib/auth-helpers";
+import { getAuthRole, requireAuth } from "@/lib/auth-helpers";
 import { getEvents } from "@/lib/repos/events";
 import { getRequests } from "@/lib/repos/requests";
 import { getAssignments } from "@/lib/repos/assignments";
@@ -15,8 +15,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  const session = await requireAuth();
   const role = await getAuthRole();
-  
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+
   // Redirect based on role to appropriate default page
   if (role === "SUPER_ADMIN" || role === "ADMIN") {
     redirect("/admin");
@@ -36,8 +38,20 @@ export default async function DashboardPage() {
     getUsers(),
   ]);
 
-  const pendingRequests = requests.filter((r) => r.status === "PENDING");
-  const myAssignments = assignments.filter((a) => a.status === "ASSIGNED");
+  const eventsForSchool = activeSchoolId
+    ? events.filter((event) => event.schoolId === activeSchoolId)
+    : events;
+  const eventIdSet = new Set(eventsForSchool.map((event) => event.id));
+  const requestsForSchool = requests.filter((request) => eventIdSet.has(request.eventId));
+  const assignmentsForSchool = assignments.filter((assignment) => eventIdSet.has(assignment.eventId));
+  const usersForSchool = users.filter((user) =>
+    activeSchoolId && Array.isArray(user.schoolIds) && user.schoolIds.length > 0
+      ? user.schoolIds.includes(activeSchoolId)
+      : true
+  );
+
+  const pendingRequests = requestsForSchool.filter((r) => r.status === "PENDING");
+  const myAssignments = assignmentsForSchool.filter((a) => a.status === "ASSIGNED");
 
   return (
     <div className="space-y-8">
@@ -54,7 +68,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-sm text-muted-foreground">Upcoming Events</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-foreground">{events.length}</div>
+            <div className="text-2xl font-semibold text-foreground">{eventsForSchool.length}</div>
             <p className="text-xs text-muted-foreground mt-1">Total events</p>
           </CardContent>
         </Card>
@@ -65,7 +79,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-semibold text-foreground">{pendingRequests.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">Awaiting approval</p>
+            <p className="text-xs text-muted-foreground mt-1">Total events</p>
           </CardContent>
         </Card>
 
@@ -85,7 +99,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-semibold text-foreground">
-              {users.filter((u) => u.role === "OFFICIAL").length}
+              {usersForSchool.filter((u) => u.role === "OFFICIAL").length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Registered officials</p>
           </CardContent>
@@ -98,7 +112,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-lg">Recent Events</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {events.slice(0, 5).map((event) => (
+            {eventsForSchool.slice(0, 5).map((event) => (
               <div key={event.id} className="flex items-center justify-between rounded-lg border bg-background/60 p-3">
                 <div>
                   <p className="font-medium text-foreground">{event.name}</p>
@@ -111,7 +125,7 @@ export default async function DashboardPage() {
                 </Button>
               </div>
             ))}
-            {events.length === 0 && (
+            {eventsForSchool.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">No events yet</p>
             )}
           </CardContent>
@@ -144,4 +158,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-

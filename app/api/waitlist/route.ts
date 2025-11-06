@@ -1,7 +1,7 @@
 // app/api/waitlist/route.ts
 export const runtime = "nodejs";
 
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
@@ -20,6 +20,29 @@ const waitlistPayloadSchema = z.object({
 const rateLimitStore = new Map<string, number[]>();
 const WAITLIST_LIMIT_PER_HOUR = 5;
 const RATE_WINDOW_MS = 60 * 60 * 1000;
+let waitlistTableEnsured = false;
+
+async function ensureWaitlistTable() {
+  if (waitlistTableEnsured) return;
+  try {
+    await sql/*sql*/`
+      create table if not exists waitlist (
+        id uuid primary key,
+        name text not null,
+        email text not null unique,
+        organization text,
+        org text,
+        role text,
+        ip_hash text,
+        user_agent text,
+        submitted_at timestamptz default now()
+      )
+    `;
+    waitlistTableEnsured = true;
+  } catch (error) {
+    console.warn("[waitlist] unable to ensure table exists:", (error as Error)?.message ?? error);
+  }
+}
 
 function getClientIp(req: Request) {
   const fwd = req.headers.get("x-forwarded-for");
@@ -40,6 +63,8 @@ function isRateLimited(ip: string, now: number) {
 }
 
 export async function POST(request: Request) {
+  await ensureWaitlistTable();
+
   const body = await request.json().catch(() => null);
   const parsed = waitlistPayloadSchema.safeParse(body);
   if (!parsed.success) {
@@ -74,9 +99,10 @@ export async function POST(request: Request) {
 
   try {
     // Primary schema (organization/ip_hash/user_agent)
+    const id = randomUUID();
     const res1 = await sql/*sql*/`
-      insert into waitlist (name, email, organization, role, ip_hash, user_agent, submitted_at)
-      values (${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
+      insert into waitlist (id, name, email, organization, role, ip_hash, user_agent, submitted_at)
+      values (${id}, ${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
       on conflict (email) do update set
         name = excluded.name,
         organization = coalesce(excluded.organization, waitlist.organization),
@@ -93,9 +119,10 @@ export async function POST(request: Request) {
     const msg = String(err?.message ?? "");
     console.warn("[waitlist] primary insert failed, trying fallback:", msg);
     try {
+      const fallbackId = randomUUID();
       const res2 = await sql/*sql*/`
-        insert into waitlist (name, email, org, role, ip_hash, user_agent, submitted_at)
-        values (${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
+        insert into waitlist (id, name, email, org, role, ip_hash, user_agent, submitted_at)
+        values (${fallbackId}, ${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
         on conflict (email) do update set
           name = excluded.name,
           org = coalesce(excluded.org, waitlist.org),
@@ -125,6 +152,7 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
+    await ensureWaitlistTable();
     const { rows } = await sql/*sql*/`
       select id, name, email, coalesce(organization, org) as organization, role, submitted_at
       from waitlist

@@ -9,9 +9,17 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function OfficialsPage() {
-  await requireAuth();
+  const session = await requireAuth();
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
   const users = await getUsers();
   const officials = users.filter((u) => u.role === "OFFICIAL" || u.role === null);
+  const scopedOfficials = activeSchoolId
+    ? officials.filter((official) =>
+        Array.isArray(official.schoolIds)
+          ? official.schoolIds.includes(activeSchoolId)
+          : true
+      )
+    : officials;
 
   return (
     <div className="space-y-6">
@@ -23,7 +31,7 @@ export default async function OfficialsPage() {
       </header>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {officials.map((official) => (
+        {scopedOfficials.map((official) => (
           <Card key={official.id} className="bg-card/80">
             <CardHeader>
               <CardTitle className="text-lg">{official.name}</CardTitle>
@@ -46,7 +54,7 @@ export default async function OfficialsPage() {
         ))}
       </div>
 
-      {officials.length === 0 && (
+      {scopedOfficials.length === 0 && (
         <Card className="bg-card/80">
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             No officials found.
@@ -56,4 +64,3 @@ export default async function OfficialsPage() {
     </div>
   );
 }
-

@@ -17,7 +17,8 @@ export default async function EventDetailPage({
 }: {
   params: { id: string };
 }) {
-  await requireAuth();
+  const session = await requireAuth();
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
   const { id } = params;
 
   const [events, requests, assignments, users] = await Promise.all([
@@ -28,7 +29,7 @@ export default async function EventDetailPage({
   ]);
 
   const event = events.find((e) => e.id === id);
-  if (!event) {
+  if (!event || (activeSchoolId && event.schoolId !== activeSchoolId)) {
     notFound();
   }
 
@@ -132,4 +133,3 @@ export default async function EventDetailPage({
     </div>
   );
 }
-

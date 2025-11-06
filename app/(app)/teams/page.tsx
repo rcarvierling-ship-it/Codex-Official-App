@@ -24,8 +24,12 @@ async function getTeams() {
 }
 
 export default async function TeamsPage() {
-  await requireAuth();
+  const session = await requireAuth();
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
   const teams = await getTeams();
+  const scopedTeams = activeSchoolId
+    ? teams.filter((team) => team.schoolId === activeSchoolId)
+    : teams;
 
   return (
     <div className="space-y-6">
@@ -36,7 +40,7 @@ export default async function TeamsPage() {
         </p>
       </header>
 
-      {teams.length === 0 ? (
+      {scopedTeams.length === 0 ? (
         <Card className="bg-card/80">
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             No teams found. Create your first team to get started.
@@ -44,7 +48,7 @@ export default async function TeamsPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {teams.map((team) => (
+          {scopedTeams.map((team) => (
             <Card key={team.id} className="bg-card/80">
               <CardHeader>
                 <CardTitle className="text-lg">{team.name}</CardTitle>
@@ -73,4 +77,3 @@ export default async function TeamsPage() {
     </div>
   );
 }
-

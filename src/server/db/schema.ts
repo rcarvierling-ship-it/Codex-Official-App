@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   password: varchar("password", { length: 255 }),
   // was enum before; using varchar to unblock
   role: varchar("role", { length: 32 }).notNull().default("USER"),
+  activeSchoolId: uuid("active_school_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -116,4 +117,12 @@ export const auditLogs = pgTable("audit_logs", {
   entityId: varchar("entity_id", { length: 80 }),
   metaJson: jsonb("meta_json"),
   ts: timestamp("ts").notNull().defaultNow(),
+});
+
+export const userProfiles = pgTable("user_profiles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  schoolId: uuid("school_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

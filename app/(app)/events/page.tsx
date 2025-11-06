@@ -12,8 +12,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function EventsPage() {
-  await requireAuth();
+  const session = await requireAuth();
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+
   const [events, users] = await Promise.all([getEvents(), getUsers()]);
+
+  const scopedEvents = activeSchoolId
+    ? events.filter((event) => event.schoolId === activeSchoolId)
+    : events;
 
   const userMap = new Map(users.map((u) => [u.id, u]));
 
@@ -26,7 +32,7 @@ export default async function EventsPage() {
         </p>
       </header>
 
-      {events.length === 0 ? (
+      {scopedEvents.length === 0 ? (
         <Card className="bg-card/80">
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             No events found. Create your first event to get started.
@@ -34,7 +40,7 @@ export default async function EventsPage() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {events.map((event) => {
+          {scopedEvents.map((event) => {
             const schoolUser = event.schoolId ? userMap.get(event.schoolId) : null;
             return (
               <Card key={event.id} className="bg-card/80">
@@ -68,4 +74,3 @@ export default async function EventsPage() {
     </div>
   );
 }
-

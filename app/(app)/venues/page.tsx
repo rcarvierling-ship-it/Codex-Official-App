@@ -2,6 +2,7 @@ import { requireAuth } from "@/lib/auth-helpers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { sql } from "@/lib/db";
+import { getEvents } from "@/lib/repos/events";
 
 export const metadata = { title: "Venues" };
 export const runtime = "nodejs";
@@ -24,8 +25,23 @@ async function getVenues() {
 }
 
 export default async function VenuesPage() {
-  await requireAuth();
-  const venues = await getVenues();
+  const session = await requireAuth();
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+
+  const [venues, events] = await Promise.all([getVenues(), getEvents()]);
+  const eventsForSchool = activeSchoolId
+    ? events.filter((event) => event.schoolId === activeSchoolId)
+    : events;
+  const relevantVenueIds = new Set(
+    eventsForSchool
+      .map((event) => event.venueId)
+      .filter((id): id is string => Boolean(id))
+  );
+
+  const scopedVenues =
+    relevantVenueIds.size > 0
+      ? venues.filter((venue) => relevantVenueIds.has(venue.id))
+      : venues;
 
   return (
     <div className="space-y-6">
@@ -36,7 +52,7 @@ export default async function VenuesPage() {
         </p>
       </header>
 
-      {venues.length === 0 ? (
+      {scopedVenues.length === 0 ? (
         <Card className="bg-card/80">
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             No venues found. Add your first venue to get started.
@@ -44,7 +60,7 @@ export default async function VenuesPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {venues.map((venue) => (
+          {scopedVenues.map((venue) => (
             <Card key={venue.id} className="bg-card/80">
               <CardHeader>
                 <CardTitle className="text-lg">{venue.name}</CardTitle>
@@ -73,4 +89,3 @@ export default async function VenuesPage() {
     </div>
   );
 }
-

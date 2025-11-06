@@ -14,17 +14,22 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function ApprovalsPage() {
-  // Only AD, ADMIN, and SUPER_ADMIN can approve
-  await requireRole("AD");
-  
+  const { session } = await requireRole("AD");
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+
   const [requests, events, users] = await Promise.all([
     getRequests(),
     getEvents(),
     getUsers(),
   ]);
 
-  const pendingRequests = requests.filter((r) => r.status === "PENDING");
-  const eventMap = new Map(events.map((e) => [e.id, e]));
+  const eventsForSchool = activeSchoolId
+    ? events.filter((event) => event.schoolId === activeSchoolId)
+    : events;
+  const eventMap = new Map(eventsForSchool.map((e) => [e.id, e]));
+  const pendingRequests = requests
+    .filter((r) => r.status === "PENDING")
+    .filter((r) => eventMap.has(r.eventId));
   const userMap = new Map(users.map((u) => [u.id, u]));
 
   return (
@@ -73,4 +78,3 @@ export default async function ApprovalsPage() {
     </div>
   );
 }
-

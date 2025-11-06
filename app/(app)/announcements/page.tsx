@@ -18,6 +18,7 @@ async function getAnnouncements() {
       createdAt: String(r.created_at ?? r.created ?? r.timestamp ?? new Date().toISOString()),
       priority: r.priority ?? "normal",
       authorId: r.author_id ?? r.author ?? null,
+      leagueId: r.league_id ?? r.league ?? null,
     }));
   } catch {
     return [];
@@ -25,8 +26,13 @@ async function getAnnouncements() {
 }
 
 export default async function AnnouncementsPage() {
-  await requireAuth();
+  const session = await requireAuth();
+  const activeLeagueId = (session.user as any)?.school?.leagueId ?? null;
   const announcements = await getAnnouncements();
+  const scopedAnnouncements =
+    activeLeagueId ?
+      announcements.filter((announcement) => announcement.leagueId === activeLeagueId) :
+      announcements;
 
   return (
     <div className="space-y-6">
@@ -37,7 +43,7 @@ export default async function AnnouncementsPage() {
         </p>
       </header>
 
-      {announcements.length === 0 ? (
+      {scopedAnnouncements.length === 0 ? (
         <Card className="bg-card/80">
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             No announcements yet. Check back later for updates.
@@ -45,7 +51,7 @@ export default async function AnnouncementsPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {announcements.map((announcement) => (
+          {scopedAnnouncements.map((announcement) => (
             <Card key={announcement.id} className="bg-card/80">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -72,4 +78,3 @@ export default async function AnnouncementsPage() {
     </div>
   );
 }
-

@@ -31,6 +31,15 @@ export interface DemoTeam {
   record: string;
 }
 
+export interface DemoPlayer {
+  id: string;
+  teamId: string;
+  number: string;
+  name: string;
+  position: string;
+  classYear: string;
+}
+
 export interface DemoVenue {
   id: string;
   name: string;
@@ -101,6 +110,9 @@ export interface DemoAuditLog {
   id: string;
   message: string;
   timestamp: string;
+  actorUserId?: string;
+  type?: string;
+  details?: string;
 }
 
 export interface DemoWaitlistEntry {
@@ -210,6 +222,29 @@ export const mockData = {
       record: "11-1",
     },
   ] satisfies DemoTeam[],
+
+  rosters: {
+    "team-1": [
+      { id: "player-1", teamId: "team-1", number: "#23", name: "Michael Jordan", position: "Guard", classYear: "12th" },
+      { id: "player-2", teamId: "team-1", number: "#32", name: "Magic Johnson", position: "Forward", classYear: "12th" },
+      { id: "player-3", teamId: "team-1", number: "#5", name: "Skylar Brooks", position: "Guard", classYear: "11th" },
+    ],
+    "team-2": [
+      { id: "player-4", teamId: "team-2", number: "#10", name: "Kobe Bryant", position: "Guard", classYear: "11th" },
+      { id: "player-5", teamId: "team-2", number: "#11", name: "Jordan Sparks", position: "Guard", classYear: "10th" },
+      { id: "player-6", teamId: "team-2", number: "#44", name: "Dominique Steele", position: "Forward", classYear: "12th" },
+    ],
+    "team-3": [
+      { id: "player-7", teamId: "team-3", number: "#7", name: "Avery Ruiz", position: "Forward", classYear: "11th" },
+      { id: "player-8", teamId: "team-3", number: "#2", name: "Cam Morgan", position: "Midfielder", classYear: "12th" },
+      { id: "player-9", teamId: "team-3", number: "#9", name: "Riley Chen", position: "Striker", classYear: "10th" },
+    ],
+    "team-4": [
+      { id: "player-10", teamId: "team-4", number: "#12", name: "Sydney Blake", position: "Quarterback", classYear: "12th" },
+      { id: "player-11", teamId: "team-4", number: "#54", name: "Hunter James", position: "Linebacker", classYear: "11th" },
+      { id: "player-12", teamId: "team-4", number: "#21", name: "Casey Nwosu", position: "Receiver", classYear: "12th" },
+    ],
+  } satisfies Record<string, DemoPlayer[]>,
 
   venues: [
     {
@@ -474,6 +509,30 @@ export const mockData = {
     EXPERIMENTAL_UI: false,
     BETA_ANALYTICS: true,
   } satisfies DemoFeatureFlags,
+
+  activity: [
+    {
+      id: "activity-1",
+      message: "School Admin published the rivalry schedule update",
+      timestamp: new Date(now.getTime() - 90 * 60 * 1000).toISOString(),
+      actorUserId: "user-school-admin",
+      type: "EVENT_UPDATED",
+    },
+    {
+      id: "activity-2",
+      message: "Athletic Director approved 3 official requests",
+      timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(),
+      actorUserId: "user-ad",
+      type: "REQUEST_APPROVED",
+    },
+    {
+      id: "activity-3",
+      message: "League Admin assigned Morgan Lee to Summit Showcase",
+      timestamp: new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString(),
+      actorUserId: "user-superadmin",
+      type: "ASSIGNMENT_ADDED",
+    },
+  ] satisfies DemoAuditLog[],
 
   waitlist: [
     {

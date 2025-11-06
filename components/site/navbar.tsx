@@ -19,7 +19,7 @@ export function Navbar() {
           <div className="relative h-8 w-8 overflow-hidden rounded-lg bg-[hsl(var(--accent)/0.1)]">
             <Image
               src="/logo.png"
-              alt="The Official App logo"
+              alt="The Official App whistle logo"
               fill
               sizes="32px"
               className="object-contain p-1.5"

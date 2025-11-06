@@ -9,7 +9,13 @@ import { Toaster } from "@/components/ui/toaster";
 
 export const metadata = {
   title: "The Official App • 🏀",
-  description: "The Official App • 🏀 — all-in-one sports operations platform for leagues, schools, and officials.",
+  description:
+    "The Official App • 🏀 — all-in-one sports operations platform for leagues, schools, and officials.",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({

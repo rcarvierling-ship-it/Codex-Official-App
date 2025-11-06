@@ -72,7 +72,7 @@ export default function DemoShell({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={brandLogo}
-                alt="The Official App logo"
+                alt="The Official App whistle logo"
                 className="hidden h-8 w-8 rounded-full object-cover lg:block"
               />
             </div>

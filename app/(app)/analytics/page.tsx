@@ -11,8 +11,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function AnalyticsPage() {
-  await requireRole("ADMIN");
-  
+  const { session } = await requireRole("ADMIN");
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+  const activeLeagueId = (session.user as any)?.school?.leagueId ?? null;
+
   const [events, requests, assignments, users] = await Promise.all([
     getEvents(),
     getRequests(),
@@ -20,22 +22,40 @@ export default async function AnalyticsPage() {
     getUsers(),
   ]);
 
+  const eventsForSchool = activeSchoolId
+    ? events.filter((event) => event.schoolId === activeSchoolId)
+    : events;
+
+  const eventIdSet = new Set(eventsForSchool.map((event) => event.id));
+
+  const requestsForSchool = requests.filter((request) => eventIdSet.has(request.eventId));
+  const assignmentsForSchool = assignments.filter((assignment) => eventIdSet.has(assignment.eventId));
+  const officialsForSchool = users.filter((user) => {
+    if (user.role && user.role !== "OFFICIAL") return false;
+    if (!activeSchoolId) return true;
+    if (Array.isArray(user.schoolIds) && user.schoolIds.length > 0) {
+      return user.schoolIds.includes(activeSchoolId);
+    }
+    return true;
+  });
+
   const now = new Date();
   const last7Days = startOfDay(subDays(now, 7));
   const last30Days = startOfDay(subDays(now, 30));
 
-  const recentEvents = events.filter(
+  const recentEvents = eventsForSchool.filter(
     (e) => new Date(e.startsAt) >= last30Days
   ).length;
 
-  const pendingRequests = requests.filter((r) => r.status === "PENDING").length;
-  const approvedRequests = requests.filter((r) => r.status === "APPROVED").length;
-  const activeAssignments = assignments.filter((a) => a.status === "ASSIGNED").length;
-  const completedAssignments = assignments.filter((a) => a.status === "COMPLETED").length;
-  const officials = users.filter((u) => u.role === "OFFICIAL" || !u.role).length;
+  const pendingRequests = requestsForSchool.filter((r) => r.status === "PENDING").length;
+  const approvedRequests = requestsForSchool.filter((r) => r.status === "APPROVED").length;
+  const activeAssignments = assignmentsForSchool.filter((a) => a.status === "ASSIGNED").length;
+  const completedAssignments = assignmentsForSchool.filter((a) => a.status === "COMPLETED").length;
+  const cancelledAssignments = assignmentsForSchool.filter((a) => a.status === "CANCELLED").length;
+  const officials = officialsForSchool.length;
 
-  const approvalRate = requests.length > 0
-    ? ((approvedRequests / requests.length) * 100).toFixed(1)
+  const approvalRate = requestsForSchool.length > 0
+    ? ((approvedRequests / requestsForSchool.length) * 100).toFixed(1)
     : "0";
 
   return (
@@ -53,7 +73,7 @@ export default async function AnalyticsPage() {
             <CardTitle className="text-sm text-muted-foreground">Total Events</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold text-foreground">{events.length}</div>
+            <div className="text-3xl font-semibold text-foreground">{eventsForSchool.length}</div>
             <p className="text-xs text-muted-foreground mt-1">
               {recentEvents} in last 30 days
             </p>
@@ -110,7 +130,7 @@ export default async function AnalyticsPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Cancelled</span>
               <span className="text-lg font-semibold text-foreground">
-                {assignments.filter((a) => a.status === "CANCELLED").length}
+                {cancelledAssignments}
               </span>
             </div>
           </CardContent>
@@ -132,7 +152,7 @@ export default async function AnalyticsPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Declined</span>
               <span className="text-lg font-semibold text-foreground">
-                {requests.filter((r) => r.status === "DECLINED").length}
+                {requestsForSchool.filter((r) => r.status === "DECLINED").length}
               </span>
             </div>
           </CardContent>
@@ -141,4 +161,3 @@ export default async function AnalyticsPage() {
     </div>
   );
 }
-

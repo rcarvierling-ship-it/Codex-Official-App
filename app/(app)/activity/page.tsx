@@ -11,10 +11,10 @@ export const metadata = { title: "Activity" };
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function getActivityLogs() {
+async function getActivityLogs(schoolFilter?: string | null) {
   try {
     const { rows } = await sql`select * from activity_logs order by created_at desc limit 100`;
-    return rows.map((r: any) => ({
+    const mapped = rows.map((r: any) => ({
       id: String(r.id ?? r.log_id ?? crypto.randomUUID()),
       action: String(r.action ?? r.type ?? "Unknown"),
       userId: r.user_id ?? r.user ?? null,
@@ -23,6 +23,17 @@ async function getActivityLogs() {
       details: r.details ?? r.metadata ?? null,
       createdAt: String(r.created_at ?? r.timestamp ?? new Date().toISOString()),
     }));
+    if (!schoolFilter) return mapped;
+    return mapped.filter((activity) => {
+      if (
+        activity.details &&
+        typeof activity.details === "object" &&
+        "schoolId" in (activity.details as Record<string, unknown>)
+      ) {
+        return (activity.details as Record<string, unknown>).schoolId === schoolFilter;
+      }
+      return true;
+    });
   } catch {
     // Fallback: create activity from recent events, requests, assignments
     const [events, requests, assignments] = await Promise.all([
@@ -32,7 +43,10 @@ async function getActivityLogs() {
     ]);
 
     const activities = [
-      ...events.slice(0, 20).map((e) => ({
+      ...events
+        .filter((event) => !schoolFilter || event.schoolId === schoolFilter)
+        .slice(0, 20)
+        .map((e) => ({
         id: `event-${e.id}`,
         action: "Event Created",
         userId: null,
@@ -41,7 +55,10 @@ async function getActivityLogs() {
         details: { name: e.name },
         createdAt: e.startsAt,
       })),
-      ...requests.slice(0, 20).map((r) => ({
+      ...requests
+        .filter((request) => !schoolFilter || events.some((event) => event.id === request.eventId && event.schoolId === schoolFilter))
+        .slice(0, 20)
+        .map((r) => ({
         id: `request-${r.id}`,
         action: `Request ${r.status}`,
         userId: r.userId,
@@ -50,7 +67,10 @@ async function getActivityLogs() {
         details: { status: r.status },
         createdAt: r.submittedAt,
       })),
-      ...assignments.slice(0, 20).map((a) => ({
+      ...assignments
+        .filter((assignment) => !schoolFilter || events.some((event) => event.id === assignment.eventId && event.schoolId === schoolFilter))
+        .slice(0, 20)
+        .map((a) => ({
         id: `assignment-${a.id}`,
         action: `Assignment ${a.status}`,
         userId: a.userId,
@@ -68,8 +88,9 @@ async function getActivityLogs() {
 }
 
 export default async function ActivityPage() {
-  await requireRole("ADMIN");
-  const activities = await getActivityLogs();
+  const { session } = await requireRole("ADMIN");
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+  const activities = await getActivityLogs(activeSchoolId);
 
   return (
     <div className="space-y-6">
@@ -138,4 +159,3 @@ export default async function ActivityPage() {
     </div>
   );
 }
-

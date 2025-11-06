@@ -13,15 +13,23 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function AssignmentsPage() {
-  await requireAuth();
+  const session = await requireAuth();
+  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+
   const [assignments, events, users] = await Promise.all([
     getAssignments(),
     getEvents(),
     getUsers(),
   ]);
 
-  const eventMap = new Map(events.map((e) => [e.id, e]));
+  const eventsForSchool = activeSchoolId
+    ? events.filter((event) => event.schoolId === activeSchoolId)
+    : events;
+  const eventMap = new Map(eventsForSchool.map((e) => [e.id, e]));
   const userMap = new Map(users.map((u) => [u.id, u]));
+  const scopedAssignments = assignments.filter((assignment) =>
+    eventMap.has(assignment.eventId)
+  );
 
   return (
     <div className="space-y-6">
@@ -32,7 +40,7 @@ export default async function AssignmentsPage() {
         </p>
       </header>
 
-      {assignments.length === 0 ? (
+      {scopedAssignments.length === 0 ? (
         <Card className="bg-card/80">
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             No assignments found.
@@ -51,7 +59,7 @@ export default async function AssignmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
-              {assignments.map((assignment) => {
+              {scopedAssignments.map((assignment) => {
                 const user = userMap.get(assignment.userId);
                 const event = eventMap.get(assignment.eventId);
                 return (
@@ -96,4 +104,3 @@ export default async function AssignmentsPage() {
     </div>
   );
 }
-

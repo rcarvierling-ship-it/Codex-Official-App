@@ -9,8 +9,12 @@ import {
   DemoAuditLog,
   DemoEvent,
   DemoFeatureFlags,
+  DemoLeague,
+  DemoPlayer,
   DemoRequest,
   DemoRole,
+  DemoSchool,
+  DemoTeam,
   DemoUser,
   mockData,
 } from '../_data/mockData';
@@ -92,10 +96,45 @@ const addActivity = (
   activity: DemoAuditLog[],
   entry: Omit<DemoAuditLog, 'id' | 'timestamp'>
 ): DemoAuditLog[] => {
+  const describe = (): string => {
+    if (entry.message) return entry.message;
+    switch (entry.type) {
+      case 'FEATURE_FLAGS_UPDATED':
+        return 'Feature flags updated';
+      case 'EVENT_CREATED':
+        return 'New event created';
+      case 'EVENT_UPDATED':
+        return 'Event updated';
+      case 'REQUEST_SUBMITTED':
+        return 'New request submitted';
+      case 'REQUEST_APPROVED':
+        return 'Request approved';
+      case 'REQUEST_DECLINED':
+        return 'Request declined';
+      case 'REQUEST_MARKED_PENDING':
+        return 'Request marked pending';
+      case 'ASSIGNMENT_ADDED':
+        return 'Assignment added';
+      case 'USER_ROLE_UPDATED':
+        return 'User role updated';
+      case 'SAMPLE_DATA_GENERATED':
+        return 'Sample data generated';
+      case 'ROSTER_UPDATED':
+        return 'Roster updated';
+      case 'LEAGUE_CREATED':
+        return 'League created';
+      case 'BRANDING_UPDATED':
+        return 'Branding updated';
+      default:
+        return entry.details || 'Demo activity logged';
+    }
+  };
+
   const newEntry: DemoAuditLog = {
     id: `log_${Math.random().toString(36).slice(2, 10)}`,
     timestamp: nowISO(),
     ...entry,
+    message: describe(),
   };
   return [newEntry, ...activity];
 };
@@ -116,6 +155,7 @@ export type DemoStoreState = {
   schools: typeof mockData.schools;
   teams: typeof mockData.teams;
   venues: typeof mockData.venues;
+  rosters: Record<string, DemoPlayer[]>;
 
   // UI/session
   currentUserId: string | null;
@@ -137,6 +177,7 @@ export type DemoStoreState = {
 
   setFeatureFlags: (flags: Partial<DemoFeatureFlags>) => void;
   toggleFlag: (key: keyof DemoFeatureFlags) => void;
+  createLeague: (payload?: Partial<DemoLeague>) => DemoLeague | undefined;
 
   upsertEvent: (event: DemoEvent) => void;
   updateNotes: (eventId: string, notes: string) => void;
@@ -157,6 +198,11 @@ export type DemoStoreState = {
 
   addAssignment: (assignment: DemoAssignment) => void;
   updateUserRole: (userId: string, role: DemoRole) => void;
+  addPlayerToTeam: (
+    teamId: string,
+    player: Omit<DemoPlayer, 'id' | 'teamId'>
+  ) => DemoPlayer | undefined;
+  removePlayerFromTeam: (teamId: string, playerId: string) => void;
 
   setBranding: (logoDataUrl: string | undefined) => void;
   setRateLimits: (limits: { burst: number; sustained: number }) => void;
@@ -187,6 +233,7 @@ export const useDemoStore = create<DemoStoreState>()(
       schools: mockData.schools,
       teams: mockData.teams,
       venues: mockData.venues,
+      rosters: mockData.rosters,
 
       currentUserId: mockData.users[0]?.id ?? null,
       activeUserId: mockData.users[0]?.id ?? null,
@@ -256,15 +303,16 @@ export const useDemoStore = create<DemoStoreState>()(
 
       setFeatureFlags: (flags) => {
         const state = get();
-        set({
-          featureFlags: { ...state.featureFlags, ...flags },
-          activity: addActivity(state.activity, {
-            actorUserId: state.currentUserId ?? 'system',
-            type: 'FEATURE_FLAGS_UPDATED',
-            details: JSON.stringify(flags),
-          }),
-        });
-      },
+      set({
+        featureFlags: { ...state.featureFlags, ...flags },
+        activity: addActivity(state.activity, {
+          actorUserId: state.currentUserId ?? 'system',
+          type: 'FEATURE_FLAGS_UPDATED',
+          message: 'Feature flags updated',
+          details: JSON.stringify(flags),
+        }),
+      });
+    },
 
       upsertEvent: (event) => {
         const state = get();
@@ -273,18 +321,24 @@ export const useDemoStore = create<DemoStoreState>()(
           ? state.events.map((e) => (e.id === event.id ? event : e))
           : [event, ...state.events];
 
-        set({
-          events: nextEvents,
-          activity: addActivity(state.activity, {
-            actorUserId: state.currentUserId ?? 'system',
-            type: exists ? 'EVENT_UPDATED' : 'EVENT_CREATED',
-            details: JSON.stringify({ id: event.id, title: event.title }),
-          }),
-        });
-      },
+      set({
+        events: nextEvents,
+        activity: addActivity(state.activity, {
+          actorUserId: state.currentUserId ?? 'system',
+          type: exists ? 'EVENT_UPDATED' : 'EVENT_CREATED',
+          message: exists
+            ? `Event updated: ${event.title}`
+            : `Event created: ${event.title}`,
+          details: JSON.stringify({ id: event.id, title: event.title }),
+        }),
+      });
+    },
 
       submitRequest: ({ eventId, userId, message }) => {
         const state = get();
+        const eventTitle =
+          state.events.find((event) => event.id === eventId)?.title ??
+          'Event';
 
         const newReq: DemoRequest = {
           id: `req_${Math.random().toString(36).slice(2, 10)}`,
@@ -300,6 +354,7 @@ export const useDemoStore = create<DemoStoreState>()(
           activity: addActivity(state.activity, {
             actorUserId: userId,
             type: 'REQUEST_SUBMITTED',
+            message: `Request submitted for ${eventTitle}`,
             details: JSON.stringify({ id: newReq.id, eventId }),
           }),
         });
@@ -309,6 +364,10 @@ export const useDemoStore = create<DemoStoreState>()(
         const state = get();
 
         const normalized: RequestStatus = normalizeStatus(nextStatus);
+        const request = state.requests.find((r) => r.id === id);
+        const eventTitle = request
+          ? state.events.find((event) => event.id === request.eventId)?.title
+          : undefined;
 
         // Build a correctly typed array; status stays within the union
         const updatedRequests: DemoRequest[] = state.requests.map((r) =>
@@ -318,12 +377,11 @@ export const useDemoStore = create<DemoStoreState>()(
         // If approving, you might create an assignment stub here (demo behavior)
         let newAssignments = state.assignments;
         if (normalized === 'APPROVED') {
-          const req = state.requests.find((r) => r.id === id);
-          if (req) {
+          if (request) {
             const assignment: DemoAssignment = {
               id: `asn_${Math.random().toString(36).slice(2, 10)}`,
-              eventId: req.eventId,
-              userId: req.userId,
+              eventId: request.eventId,
+              userId: request.userId,
               position: 'Official',
               confirmedAt: nowISO(),
             };
@@ -342,6 +400,12 @@ export const useDemoStore = create<DemoStoreState>()(
                 : normalized === 'DECLINED'
                 ? 'REQUEST_DECLINED'
                 : 'REQUEST_MARKED_PENDING',
+            message:
+              normalized === 'APPROVED'
+                ? `Request approved for ${eventTitle ?? 'an event'}`
+                : normalized === 'DECLINED'
+                ? `Request declined for ${eventTitle ?? 'an event'}`
+                : `Request moved back to pending`,
             details: JSON.stringify({ id, note }),
           }),
         });
@@ -349,11 +413,15 @@ export const useDemoStore = create<DemoStoreState>()(
 
       addAssignment: (assignment) => {
         const state = get();
+        const eventTitle = state.events.find(
+          (event) => event.id === assignment.eventId
+        )?.title;
         set({
           assignments: [assignment, ...state.assignments],
           activity: addActivity(state.activity, {
             actorUserId: state.currentUserId ?? 'system',
             type: 'ASSIGNMENT_ADDED',
+            message: `Assignment added for ${eventTitle ?? assignment.eventId}`,
             details: JSON.stringify({
               id: assignment.id,
               eventId: assignment.eventId,
@@ -412,18 +480,106 @@ export const useDemoStore = create<DemoStoreState>()(
         const updatedUsers = state.users.map((u) =>
           u.id === userId ? { ...u, role } : u
         );
+        const userName = state.users.find((u) => u.id === userId)?.name;
         set({
           users: updatedUsers,
           activity: addActivity(state.activity, {
             actorUserId: state.currentUserId ?? 'system',
             type: 'USER_ROLE_UPDATED',
+            message: `Role updated for ${userName ?? userId}`,
             details: JSON.stringify({ userId, role }),
           }),
         });
       },
 
+      addPlayerToTeam: (teamId, player) => {
+        const state = get();
+        const roster = state.rosters[teamId] ?? [];
+        const teamName =
+          state.teams.find((team) => team.id === teamId)?.name ?? 'Team';
+
+        const newPlayer: DemoPlayer = {
+          id: `player_${Math.random().toString(36).slice(2, 9)}`,
+          teamId,
+          ...player,
+        };
+
+        set({
+          rosters: {
+            ...state.rosters,
+            [teamId]: [newPlayer, ...roster],
+          },
+          activity: addActivity(state.activity, {
+            actorUserId: state.currentUserId ?? 'system',
+            type: 'ROSTER_UPDATED',
+            message: `Added ${newPlayer.name} to ${teamName}`,
+            details: JSON.stringify({ teamId, playerId: newPlayer.id }),
+          }),
+        });
+
+        return newPlayer;
+      },
+
+      removePlayerFromTeam: (teamId, playerId) => {
+        const state = get();
+        const roster = state.rosters[teamId] ?? [];
+        const remaining = roster.filter((player) => player.id !== playerId);
+        const removedPlayer = roster.find((player) => player.id === playerId);
+        const teamName =
+          state.teams.find((team) => team.id === teamId)?.name ?? 'Team';
+
+        set({
+          rosters: {
+            ...state.rosters,
+            [teamId]: remaining,
+          },
+          activity: removedPlayer
+            ? addActivity(state.activity, {
+                actorUserId: state.currentUserId ?? 'system',
+                type: 'ROSTER_UPDATED',
+                message: `Removed ${removedPlayer.name} from ${teamName}`,
+                details: JSON.stringify({ teamId, playerId }),
+              })
+            : state.activity,
+        });
+      },
+
+      createLeague: (payload) => {
+        const state = get();
+        const sequence = state.leagues.length + 1;
+        const newLeague: DemoLeague = {
+          id: `league-${Math.random().toString(36).slice(2, 8)}`,
+          name: payload?.name ?? `New Demo League ${sequence}`,
+          region: payload?.region ?? 'Regional',
+          contactEmail:
+            payload?.contactEmail ??
+            `league${sequence}@theofficial.app`,
+        };
+
+        set({
+          leagues: [newLeague, ...state.leagues],
+          activity: addActivity(state.activity, {
+            actorUserId: state.currentUserId ?? 'system',
+            type: 'LEAGUE_CREATED',
+            message: `League created: ${newLeague.name}`,
+            details: JSON.stringify(newLeague),
+          }),
+        });
+
+        return newLeague;
+      },
+
       setBranding: (logoDataUrl) => {
-        set({ branding: logoDataUrl ? { logoDataUrl } : undefined });
+        set((state) => ({
+          branding: logoDataUrl ? { logoDataUrl } : undefined,
+          activity: logoDataUrl
+            ? addActivity(state.activity, {
+                actorUserId: state.currentUserId ?? 'system',
+                type: 'BRANDING_UPDATED',
+                message: 'Branding assets refreshed',
+              })
+            : state.activity,
+        }));
       },
 
       setRateLimits: (limits) => {
@@ -435,6 +591,7 @@ export const useDemoStore = create<DemoStoreState>()(
         const newSchools: typeof mockData.schools = [];
         const newTeams: typeof mockData.teams = [];
         const newEvents: DemoEvent[] = [];
+        const newRosters: Record<string, DemoPlayer[]> = {};
 
         for (let i = 0; i < count; i++) {
           const schoolId = `school-sample-${i}`;
@@ -475,15 +632,36 @@ export const useDemoStore = create<DemoStoreState>()(
             notes: '',
             createdBy: state.currentUserId ?? 'system',
           });
+
+          newRosters[teamId] = [
+            {
+              id: `player-sample-${i}-1`,
+              teamId,
+              number: `#${20 + i}`,
+              name: `Sample Player ${i + 1}`,
+              position: 'Guard',
+              classYear: '11th',
+            },
+            {
+              id: `player-sample-${i}-2`,
+              teamId,
+              number: `#${30 + i}`,
+              name: `Sample Player ${i + 6}`,
+              position: 'Forward',
+              classYear: '12th',
+            },
+          ];
         }
 
         set({
           schools: [...state.schools, ...newSchools],
           teams: [...state.teams, ...newTeams],
           events: [...state.events, ...newEvents],
+          rosters: { ...state.rosters, ...newRosters },
           activity: addActivity(state.activity, {
             actorUserId: state.currentUserId ?? 'system',
             type: 'SAMPLE_DATA_GENERATED',
+            message: `Generated ${count} sample program${count === 1 ? '' : 's'}`,
             details: JSON.stringify({ count }),
           }),
         });
@@ -501,6 +679,7 @@ export const useDemoStore = create<DemoStoreState>()(
           venues: [],
           announcements: [],
           activity: [],
+          rosters: {},
         });
       },
 
@@ -518,6 +697,7 @@ export const useDemoStore = create<DemoStoreState>()(
           schools: mockData.schools,
           teams: mockData.teams,
           venues: mockData.venues,
+          rosters: mockData.rosters,
         });
       },
 
@@ -535,6 +715,7 @@ export const useDemoStore = create<DemoStoreState>()(
           schools: mockData.schools,
           teams: mockData.teams,
           venues: mockData.venues,
+          rosters: mockData.rosters,
           currentUserId: mockData.users[0]?.id ?? null,
           activeUserId: mockData.users[0]?.id ?? null,
           selectedSchoolId: mockData.events[0]?.schoolId ?? null,
@@ -563,6 +744,7 @@ export const useDemoStore = create<DemoStoreState>()(
         schools: state.schools,
         teams: state.teams,
         venues: state.venues,
+        rosters: state.rosters,
         currentUserId: state.currentUserId,
         activeUserId: state.activeUserId,
         selectedSchoolId: state.selectedSchoolId,

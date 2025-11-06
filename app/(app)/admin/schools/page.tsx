@@ -1,31 +1,15 @@
 import { requireRole } from "@/lib/auth-helpers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { sql } from "@/lib/db";
+import { listSchools } from "@/lib/repos/schools";
 
 export const metadata = { title: "Schools" };
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function getSchools() {
-  try {
-    const { rows } = await sql`select * from schools order by name asc`;
-    return rows.map((r: any) => ({
-      id: String(r.id ?? r.school_id ?? crypto.randomUUID()),
-      name: String(r.name ?? r.school_name ?? "Unknown School"),
-      district: r.district ?? null,
-      city: r.city ?? null,
-      state: r.state ?? null,
-      type: r.type ?? r.school_type ?? null,
-    }));
-  } catch {
-    return [];
-  }
-}
-
 export default async function SchoolsPage() {
   await requireRole("SUPER_ADMIN");
-  const schools = await getSchools();
+  const schools = await listSchools();
 
   return (
     <div className="space-y-6">
@@ -50,18 +34,11 @@ export default async function SchoolsPage() {
                 <CardTitle className="text-lg">{school.name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
-                {school.district && <p>District: {school.district}</p>}
-                {(school.city || school.state) && (
-                  <p>
-                    {school.city}
-                    {school.city && school.state ? ", " : ""}
-                    {school.state}
-                  </p>
-                )}
-                {school.type && (
-                  <Badge variant="outline" className="text-xs">
-                    {school.type}
-                  </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {school.slug}
+                </Badge>
+                {school.leagueId && (
+                  <p className="text-xs">League: {school.leagueId}</p>
                 )}
               </CardContent>
             </Card>
@@ -71,4 +48,3 @@ export default async function SchoolsPage() {
     </div>
   );
 }
-

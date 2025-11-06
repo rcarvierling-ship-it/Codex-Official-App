@@ -1,6 +1,7 @@
-import 'server-only';
-import { sql } from '@lib/db';
-import { pick } from '@/lib/util/pick';
+import "server-only";
+import { randomUUID } from "crypto";
+import { sql } from "@lib/db";
+import { pick } from "@/lib/util/pick";
 
 export type Event = {
   id: string;
@@ -8,17 +9,19 @@ export type Event = {
   name: string;
   startsAt: string;
   endsAt?: string | null;
+  venueId?: string | null;
 };
 
 export async function getEvents(): Promise<Event[]> {
   try {
     const { rows } = await sql<Record<string, unknown>>`select * from events order by 1 desc`;
     return rows.map((r) => ({
-      id: String(pick(r, ['id', 'event_id', 'uuid'], crypto.randomUUID())),
+      id: String(pick(r, ['id', 'event_id', 'uuid'], randomUUID())),
       schoolId: pick<string | null>(r, ['school_id', 'schoolid', 'school', 'org_id'], null),
       name: String(pick(r, ['name', 'title', 'event_name', 'eventtitle', 'label'], 'Untitled Event')),
       startsAt: String(pick(r, ['starts_at', 'start_time', 'start'], new Date().toISOString())),
       endsAt: pick<string | null>(r, ['ends_at', 'end_time', 'end'], null),
+      venueId: pick<string | null>(r, ['venue_id', 'venueId', 'venue'], null),
     }));
   } catch {
     return [];
@@ -81,4 +84,3 @@ export async function createEvent(name: string, schoolId: string, startsAt: stri
     return undefined;
   }
 }
-
