@@ -66,7 +66,7 @@ export const personaOptions = [
   },
   {
     label: 'Official',
-    userId: 'user-official',
+    userId: 'user-official-1',
     summary: 'Claims assignments and reports results.',
     highlights: [
       'Claim or decline assignments',

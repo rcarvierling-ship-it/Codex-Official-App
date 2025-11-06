@@ -8,6 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import {
   personaOptions,
@@ -94,12 +105,14 @@ export default function DemoOverviewPage() {
     const existingAssignments = (assignments ?? []).filter(
       (assignment: any) => assignment.eventId === eventId
     );
-    const availableOfficial = officials.find(
+    
+    // Find all officials not yet assigned to this event
+    const availableOfficials = officials.filter(
       (official: any) =>
         !existingAssignments.some((assignment: any) => assignment.userId === official.id)
     );
 
-    if (!availableOfficial) {
+    if (availableOfficials.length === 0) {
       toast({
         title: "No available officials",
         description: "Everyone on the roster is already covering this event.",
@@ -107,17 +120,21 @@ export default function DemoOverviewPage() {
       return;
     }
 
+    // Assign the first available official
+    const availableOfficial = availableOfficials[0];
+    const assignmentCount = existingAssignments.length;
+
     addAssignment({
       id: `asn_demo_${Math.random().toString(36).slice(2, 9)}`,
       eventId,
       userId: availableOfficial.id,
-      position: "Official",
+      position: assignmentCount === 0 ? "Referee" : "Umpire",
       confirmedAt: new Date().toISOString(),
     });
 
     toast({
       title: "Official assigned",
-      description: `${availableOfficial.name} will cover ${event?.title ?? "the event"}.`,
+      description: `${availableOfficial.name} assigned as ${assignmentCount === 0 ? "Referee" : "Umpire"} for ${event?.title ?? "the event"}.`,
     });
   };
   
@@ -153,6 +170,9 @@ export default function DemoOverviewPage() {
           <button
             onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
             className="w-full rounded-lg border-2 border-emerald-500/50 bg-card px-4 py-3 text-left flex items-center justify-between hover:border-emerald-500 transition-colors"
+            aria-label="Select role to explore"
+            aria-expanded={isRoleDropdownOpen}
+            aria-haspopup="listbox"
           >
             <div className="flex items-center gap-3">
               <span className="text-foreground font-medium">{currentPersona}</span>
@@ -163,12 +183,18 @@ export default function DemoOverviewPage() {
             </svg>
           </button>
           {isRoleDropdownOpen && (
-            <div className="absolute z-50 w-full mt-2 rounded-lg border bg-card shadow-lg">
+            <div 
+              className="absolute z-50 w-full mt-2 rounded-lg border bg-card shadow-lg"
+              role="listbox"
+              aria-label="Available roles"
+            >
               {personaOptions.map((persona) => (
                 <button
                   key={persona.label}
                   onClick={() => handleSetPersona(persona.label)}
                   className="w-full px-4 py-3 text-left hover:bg-muted flex items-center justify-between"
+                  role="option"
+                  aria-selected={currentPersona === persona.label}
                 >
                   <div>
                     <div className="font-medium text-foreground">{persona.label}</div>
@@ -250,6 +276,8 @@ export default function DemoOverviewPage() {
           events={upcomingEvents}
           assignments={assignments}
           recentActivity={recentActivity}
+          toastFn={toast}
+          requestToWork={requestToWork}
         />
       )}
 
@@ -471,6 +499,7 @@ function SchoolAdminDashboard({
             <Button
               className="w-full bg-emerald-500 hover:bg-emerald-600 text-white mt-2"
               onClick={handleAddPlayer}
+              aria-label="Add player to roster"
             >
               <span className="mr-2">+</span> Add Player
             </Button>
@@ -501,6 +530,7 @@ function SchoolAdminDashboard({
                       variant="ghost"
                       className="text-xs text-muted-foreground hover:text-red-500"
                       onClick={() => handleRemovePlayer(player.id)}
+                      aria-label={`Remove ${player.name} from roster`}
                     >
                       Remove
                     </Button>
@@ -549,6 +579,7 @@ function SchoolAdminDashboard({
                         className="bg-emerald-500 hover:bg-emerald-600 text-white flex-1"
                         onClick={() => approveRequest(req.id)}
                         disabled={!canApprove}
+                        aria-label={`Approve request for ${event?.title ?? "event"}`}
                       >
                         ✓ Approve
                       </Button>
@@ -558,6 +589,7 @@ function SchoolAdminDashboard({
                         className="flex-1"
                         onClick={() => declineRequest(req.id)}
                         disabled={!canApprove}
+                        aria-label={`Decline request for ${event?.title ?? "event"}`}
                       >
                         ✕ Deny
                       </Button>
@@ -720,6 +752,7 @@ function LeagueAdminDashboard({
                     size="sm"
                     className="bg-emerald-500 hover:bg-emerald-600 text-white"
                     onClick={() => onAssignOfficial(event.id)}
+                    aria-label={`Assign official to ${event.title}`}
                   >
                     Assign Official
                   </Button>
@@ -831,11 +864,26 @@ function CoachDashboard({
     });
   };
 
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageSubject, setMessageSubject] = useState("");
+  const [messageBody, setMessageBody] = useState("");
+
   const handleSendMessage = () => {
+    if (!messageSubject.trim() || !messageBody.trim()) {
+      toastFn?.({
+        title: "Message incomplete",
+        description: "Please provide both a subject and message body.",
+        variant: "destructive",
+      });
+      return;
+    }
     toastFn?.({
       title: "Message sent",
-      description: "Your staff received the update in their inbox.",
+      description: `"${messageSubject}" was sent to your staff.`,
     });
+    setMessageSubject("");
+    setMessageBody("");
+    setShowMessageModal(false);
   };
   return (
     <>
@@ -901,12 +949,63 @@ function CoachDashboard({
               <div className="font-medium text-foreground">League Admin • 2h ago</div>
               <div className="text-sm text-muted-foreground mt-1">"Playoff schedule has been updated. Please review..."</div>
             </div>
-            <Button
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
-              onClick={handleSendMessage}
-            >
-              <span className="mr-2">✈</span> New Message
-            </Button>
+            <Dialog open={showMessageModal} onOpenChange={setShowMessageModal}>
+              <DialogTrigger asChild>
+                <Button
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+                  aria-label="Open new message dialog"
+                >
+                  <span className="mr-2">✈</span> New Message
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>New Message</DialogTitle>
+                  <DialogDescription>
+                    Send a message to your staff, officials, or administrators.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="message-subject">Subject</Label>
+                    <Input
+                      id="message-subject"
+                      placeholder="Enter message subject"
+                      value={messageSubject}
+                      onChange={(e) => setMessageSubject(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="message-body">Message</Label>
+                    <Textarea
+                      id="message-body"
+                      placeholder="Enter your message"
+                      value={messageBody}
+                      onChange={(e) => setMessageBody(e.target.value)}
+                      rows={6}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowMessageModal(false);
+                      setMessageSubject("");
+                      setMessageBody("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                    onClick={handleSendMessage}
+                  >
+                    Send Message
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       </div>
@@ -1091,10 +1190,26 @@ function AthleticDirectorDashboard({
                       <div className="font-medium text-foreground">{amount}</div>
                       {status === "paid" ? (
                         <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs">
-                          paid
+                          Paid
                         </Badge>
                       ) : (
-                        <div className="text-xs text-muted-foreground">pending</div>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge variant="outline" className="text-xs">Pending</Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs h-6 px-2"
+                            onClick={() =>
+                              toastFn?.({
+                                title: "Payment marked as sent",
+                                description: `Payment of ${amount} to ${official?.name ?? "Official"} has been processed.`,
+                              })
+                            }
+                            aria-label={`Mark payment as sent for ${official?.name ?? "official"}`}
+                          >
+                            Mark Sent
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1142,7 +1257,7 @@ function AthleticDirectorDashboard({
 }
 
 // Official Dashboard
-function OfficialDashboard({ events, assignments, recentActivity }: any) {
+function OfficialDashboard({ events, assignments, recentActivity, toastFn, requestToWork }: any) {
   return (
     <>
       <Card className="bg-card/80">
@@ -1175,7 +1290,17 @@ function OfficialDashboard({ events, assignments, recentActivity }: any) {
                   <div className="text-emerald-500 font-semibold">$75/game</div>
                   <div className="text-xs text-muted-foreground">2 officials needed</div>
                 </div>
-                <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
+                <Button 
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+                  onClick={() => {
+                    requestToWork?.(event.id, `Official request to work ${event.title}`);
+                    toastFn?.({
+                      title: "Request submitted",
+                      description: `Your request to work ${event.title} has been sent to administrators.`,
+                    });
+                  }}
+                  aria-label={`Request to work ${event.title}`}
+                >
                   Request to Work
                 </Button>
               </div>
