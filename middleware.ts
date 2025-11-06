@@ -38,21 +38,23 @@ export async function middleware(request: NextRequest) {
   }
 
   // Get token from NextAuth
-  const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+  const secret = process.env.NEXTAUTH_SECRET;
   if (!secret) {
-    // In production, we need a secret. In dev, allow fallback.
+    // Log warning but don't crash - allow request to proceed with warning
     if (process.env.NODE_ENV === "production") {
-      console.error("[middleware] Missing NEXTAUTH_SECRET or AUTH_SECRET in production");
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 }
-      );
+      console.warn("[middleware] Missing NEXTAUTH_SECRET in production. Set this environment variable for secure authentication.");
+    }
+    // In production without secret, redirect to login to avoid security issues
+    if (process.env.NODE_ENV === "production") {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(loginUrl);
     }
   }
   
   const token = await getToken({ 
     req: request, 
-    secret: secret || "dev-secret-change-in-production" 
+    secret: secret || undefined
   });
 
   // If no token, redirect to login
@@ -78,15 +80,21 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Only protect specific paths, not the root route
+    "/dashboard/:path*",
+    "/admin/:path*",
+    "/test/:path*",
+    "/events/:path*",
+    "/officials/:path*",
+    "/requests/:path*",
+    "/approvals/:path*",
+    "/assignments/:path*",
+    "/announcements/:path*",
+    "/teams/:path*",
+    "/venues/:path*",
+    "/analytics/:path*",
+    "/activity/:path*",
+    "/profile/:path*",
   ],
 };
 

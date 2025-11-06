@@ -1,31 +1,18 @@
-import { randomBytes } from "crypto";
 import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-const resolvedSecret = (() => {
-  const explicitSecret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
-  if (explicitSecret?.trim()) return explicitSecret.trim();
-
-  // Generate a deterministic-but-unique secret per runtime to avoid crashes on Vercel
-  const globalSymbol = Symbol.for("__app_nextauth_secret");
-  const globalWithSecret = globalThis as typeof globalThis & Record<symbol, string>;
-
-  if (!globalWithSecret[globalSymbol]) {
-    globalWithSecret[globalSymbol] = randomBytes(32).toString("hex");
-    if (process.env.NODE_ENV === "production") {
-      console.warn(
-        "[auth] NEXTAUTH_SECRET missing; using runtime-generated secret. Set NEXTAUTH_SECRET to avoid session resets."
-      );
-    }
-  }
-
-  return globalWithSecret[globalSymbol];
-})();
+// Guard: Log warning if secret is missing but don't crash at import time
+if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === "production") {
+  console.warn(
+    "[auth] NEXTAUTH_SECRET is missing. Set this environment variable in production to ensure secure sessions."
+  );
+}
 
 // Minimal credentials provider restricted to a single user.
+// Note: trustHost is automatically handled in NextAuth v4 when NEXTAUTH_URL is set
 export const authOptions: NextAuthOptions = {
-  secret: resolvedSecret,
+  secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
   providers: [
     Credentials({

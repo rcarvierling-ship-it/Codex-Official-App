@@ -3,24 +3,49 @@ import { normalizeRole, type Role } from "@/lib/nav";
 import { roleAllows } from "@/lib/acl";
 import { redirect } from "next/navigation";
 
+// Guard: Log warning if auth secret is missing but don't crash
+if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === "production") {
+  console.warn(
+    "[auth-helpers] NEXTAUTH_SECRET is missing. Authentication may not work correctly in production."
+  );
+}
+
 /**
  * Get the current user's role from NextAuth session
  */
 export async function getAuthRole(): Promise<Role> {
-  const session = await getSessionServer();
-  const role = (session?.user as any)?.role;
-  return normalizeRole(role ?? "USER");
+  try {
+    const session = await getSessionServer();
+    const role = (session?.user as any)?.role;
+    return normalizeRole(role ?? "USER");
+  } catch (error) {
+    // If auth fails due to missing secret, return default role
+    if (!process.env.NEXTAUTH_SECRET) {
+      console.warn("[auth-helpers] getAuthRole failed - missing NEXTAUTH_SECRET");
+      return normalizeRole("USER");
+    }
+    throw error;
+  }
 }
 
 /**
  * Require authentication and return the session
  */
 export async function requireAuth() {
-  const session = await getSessionServer();
-  if (!session) {
-    redirect("/(auth)/login");
+  try {
+    const session = await getSessionServer();
+    if (!session) {
+      redirect("/login");
+    }
+    return session;
+  } catch (error) {
+    // If auth fails due to missing secret, redirect to login
+    if (!process.env.NEXTAUTH_SECRET) {
+      console.warn("[auth-helpers] requireAuth failed - missing NEXTAUTH_SECRET, redirecting to login");
+      redirect("/login");
+    }
+    throw error;
   }
-  return session;
 }
 
 /**
