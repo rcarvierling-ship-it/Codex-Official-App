@@ -18,12 +18,22 @@ export async function GET() {
       where table_schema in ('public')
       order by table_schema, table_name;
     `;
+    
+    // Get column details for waitlist table if it exists
+    const waitlistColumns = await sql/*sql*/`
+      select column_name, data_type, is_nullable
+      from information_schema.columns
+      where table_schema = 'public' and table_name = 'waitlist'
+      order by ordinal_position;
+    `;
+    
     return NextResponse.json({
       envUsed: (process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DATABASE_URL || "unset")
         .replace(/:\/\/.*?:.*?@/, "://***:***@"), // mask creds
       dbInfo: dbInfo.rows?.[0] ?? null,
       searchPath: searchPath.rows?.[0] ?? null,
       tables: tables.rows ?? [],
+      waitlistColumns: waitlistColumns.rows ?? [],
     });
   } catch (e: any) {
     return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });

@@ -98,7 +98,7 @@ export async function POST(request: Request) {
   const userAgent = request.headers.get("user-agent") ?? "unknown";
 
   try {
-    // Primary schema (organization/ip_hash/user_agent)
+    // Try primary schema (organization/ip_hash/user_agent)
     const id = randomUUID();
     const res1 = await sql/*sql*/`
       insert into waitlist (id, name, email, organization, role, ip_hash, user_agent, submitted_at)
@@ -115,9 +115,9 @@ export async function POST(request: Request) {
     const id1 = (res1 as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
     return NextResponse.json({ id: id1 }, { status: 201 });
   } catch (err: any) {
-    // Fallback to alt column names present in your DB (org, ip_hash, user_agent)
+    // Fallback 1: Try with org instead of organization
     const msg = String(err?.message ?? "");
-    console.warn("[waitlist] primary insert failed, trying fallback:", msg);
+    console.warn("[waitlist] primary insert failed, trying fallback 1:", msg);
     try {
       const fallbackId = randomUUID();
       const res2 = await sql/*sql*/`
@@ -134,18 +134,41 @@ export async function POST(request: Request) {
       const id2 = (res2 as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
       return NextResponse.json({ id: id2 }, { status: 201 });
     } catch (err2: any) {
+      // Fallback 2: Try with iphash and useragent (no underscores)
       const m2 = String(err2?.message ?? "");
-      console.error("[api/waitlist] insert failed:", m2);
-      if (m2.includes("relation") && m2.includes("does not exist")) {
-        return NextResponse.json(
-          { message: "Table 'waitlist' is missing in the database." },
-          { status: 500 }
-        );
+      console.warn("[waitlist] fallback 1 failed, trying fallback 2:", m2);
+      try {
+        const fallbackId2 = randomUUID();
+        const res3 = await sql/*sql*/`
+          insert into waitlist (id, name, email, org, role, iphash, useragent, submitted_at)
+          values (${fallbackId2}, ${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
+          on conflict (email) do update set
+            name = excluded.name,
+            org = coalesce(excluded.org, waitlist.org),
+            role = coalesce(excluded.role, waitlist.role),
+            iphash = coalesce(excluded.iphash, waitlist.iphash),
+            useragent = coalesce(excluded.useragent, waitlist.useragent)
+          returning id
+        `;
+        const id3 = (res3 as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
+        return NextResponse.json({ id: id3 }, { status: 201 });
+      } catch (err3: any) {
+        const m3 = String(err3?.message ?? "");
+        console.error("[api/waitlist] all insert attempts failed:", m3);
+        if (m3.includes("relation") && m3.includes("does not exist")) {
+          return NextResponse.json(
+            { message: "Table 'waitlist' is missing in the database." },
+            { status: 500 }
+          );
+        }
+        if (m3.includes("duplicate key") || m3.includes("unique constraint")) {
+          return NextResponse.json({ message: "Already on the waitlist." }, { status: 409 });
+        }
+        return NextResponse.json({ 
+          message: "Failed to save waitlist entry.", 
+          error: m3 
+        }, { status: 500 });
       }
-      if (m2.includes("duplicate key") || m2.includes("unique constraint")) {
-        return NextResponse.json({ message: "Already on the waitlist." }, { status: 409 });
-      }
-      return NextResponse.json({ message: "Failed to save waitlist entry." }, { status: 500 });
     }
   }
 }
