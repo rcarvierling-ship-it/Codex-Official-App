@@ -18,7 +18,7 @@ After setting the variables, **redeploy** your project.
 
 ## 2. Diagnostic Endpoint Created
 
-✅ Created `app/api/_db-diag/route.ts`
+✅ Created `app/api/db-diag/route.ts`
 
 This endpoint will:
 - Show which environment variable is being used (with credentials masked)
@@ -30,7 +30,7 @@ This endpoint will:
 
 After redeploying, visit:
 ```
-https://the-official-app.com/api/_db-diag
+https://the-official-app.com/api/db-diag
 ```
 
 **Expected response:**
@@ -86,7 +86,7 @@ create index if not exists idx_waitlist_submitted_at
 
 1. **Visit the diagnostic endpoint again:**
    ```
-   https://the-official-app.com/api/_db-diag
+   https://the-official-app.com/api/db-diag
    ```
    - Should now show `public.waitlist` in the `tables` array
 
