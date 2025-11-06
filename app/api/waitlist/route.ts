@@ -89,17 +89,19 @@ export async function POST(request: Request) {
     const id1 = (res1 as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
     return NextResponse.json({ id: id1 }, { status: 201 });
   } catch (err: any) {
-    // Fallback to alt column names (org/iphash/useragent)
+    // Fallback to alt column names present in your DB (org, ip_hash, user_agent)
     const msg = String(err?.message ?? "");
     console.warn("[waitlist] primary insert failed, trying fallback:", msg);
     try {
       const res2 = await sql/*sql*/`
-        insert into waitlist (name, email, org, role, iphash, useragent, submitted_at)
+        insert into waitlist (name, email, org, role, ip_hash, user_agent, submitted_at)
         values (${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
         on conflict (email) do update set
           name = excluded.name,
           org = coalesce(excluded.org, waitlist.org),
-          role = coalesce(excluded.role, waitlist.role)
+          role = coalesce(excluded.role, waitlist.role),
+          ip_hash = coalesce(excluded.ip_hash, waitlist.ip_hash),
+          user_agent = coalesce(excluded.user_agent, waitlist.user_agent)
         returning id
       `;
       const id2 = (res2 as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
