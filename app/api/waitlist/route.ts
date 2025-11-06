@@ -4,11 +4,11 @@ export const runtime = "nodejs";
 import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { sql } from "@/lib/db"; // must export createClient({ connectionString }). See lib/db.ts.
+import { sql } from "@/lib/db";
 
-// -------------------------
-// Validation & rate limiting
-// -------------------------
+// Types for returned rows
+type WaitlistRow = { id: string };
+
 const waitlistPayloadSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
@@ -39,11 +39,7 @@ function isRateLimited(ip: string, now: number) {
   return false;
 }
 
-// -------------------------
-// Handler
-// -------------------------
 export async function POST(request: Request) {
-  // Parse & validate
   const body = await request.json().catch(() => null);
   const parsed = waitlistPayloadSchema.safeParse(body);
   if (!parsed.success) {
@@ -71,12 +67,13 @@ export async function POST(request: Request) {
   }
 
   // IP hash (stable/anonymized)
-  const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "theofficialapp-secret";
+  const secret =
+    process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "theofficialapp-secret";
   const ipHash = createHash("sha256").update(`${ip}:${secret}`).digest("hex");
   const userAgent = request.headers.get("user-agent") ?? "unknown";
 
   try {
-    // First try a schema with organization/ip_hash/user_agent/submitted_at
+    // Primary schema (organization/ip_hash/user_agent)
     const res1 = await sql/*sql*/`
       insert into waitlist (name, email, organization, role, ip_hash, user_agent, submitted_at)
       values (${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
@@ -89,9 +86,10 @@ export async function POST(request: Request) {
         submitted_at = waitlist.submitted_at
       returning id
     `;
-    return NextResponse.json({ id: res1.rows?.[0]?.id ?? null }, { status: 201 });
+    const id1 = (res1 as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
+    return NextResponse.json({ id: id1 }, { status: 201 });
   } catch (err: any) {
-    // Fallback to alt column names (org, iphash, useragent)
+    // Fallback to alt column names (org/iphash/useragent)
     const msg = String(err?.message ?? "");
     console.warn("[waitlist] primary insert failed, trying fallback:", msg);
     try {
@@ -104,7 +102,8 @@ export async function POST(request: Request) {
           role = coalesce(excluded.role, waitlist.role)
         returning id
       `;
-      return NextResponse.json({ id: res2.rows?.[0]?.id ?? null }, { status: 201 });
+      const id2 = (res2 as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
+      return NextResponse.json({ id: id2 }, { status: 201 });
     } catch (err2: any) {
       const m2 = String(err2?.message ?? "");
       console.error("[api/waitlist] insert failed:", m2);
@@ -122,7 +121,6 @@ export async function POST(request: Request) {
   }
 }
 
-// Optional: simple GET to inspect recent rows while testing
 export async function GET() {
   try {
     const { rows } = await sql/*sql*/`
