@@ -2,9 +2,11 @@ import { createClient } from '@vercel/postgres';
 
 export const hasDbEnv = Boolean(process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING);
 
-const client = createClient();
+// Only instantiate a client if env vars exist to avoid build-time errors
+const client = hasDbEnv ? createClient() : null as any;
 let connected: Promise<void> | null = null;
 async function ensureConnected() {
+  if (!client) return; // no-op when no env present
   if (!connected) connected = client.connect();
   await connected;
 }

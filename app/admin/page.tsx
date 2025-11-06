@@ -7,11 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { requireRole } from "@/lib/auth-helpers";
 import { getRequests } from "@lib/repos/requests";
-import { db } from "@/server/db/client";
-import { events, users, waitlist } from "@/server/db/schema";
+import { hasDbEnv } from "@/lib/db";
 
 async function getMetricCount<T>(table: T) {
   try {
+    if (!hasDbEnv) return 0;
+    const { db } = await import("@/server/db/client");
     const result = await db.select({ value: sql<number>`count(*)` }).from(table as any);
     return Number(result[0]?.value ?? 0);
   } catch (error) {
@@ -22,6 +23,9 @@ async function getMetricCount<T>(table: T) {
 
 async function getWaitlistEntries() {
   try {
+    if (!hasDbEnv) return [] as any[];
+    const { db } = await import("@/server/db/client");
+    const { waitlist } = await import("@/server/db/schema");
     const rows = await db
       .select({
         id: waitlist.id,
@@ -45,9 +49,18 @@ async function getWaitlistEntries() {
 export default async function AdminPage() {
   const { role } = await requireRole("ADMIN");
   const [eventsCount, usersCount, waitlistCount, waitlistRows, requests] = await Promise.all([
-    getMetricCount(events),
-    getMetricCount(users),
-    getMetricCount(waitlist),
+    hasDbEnv ? (async () => {
+      const { events } = await import("@/server/db/schema");
+      return getMetricCount(events);
+    })() : Promise.resolve(0),
+    hasDbEnv ? (async () => {
+      const { users } = await import("@/server/db/schema");
+      return getMetricCount(users);
+    })() : Promise.resolve(0),
+    hasDbEnv ? (async () => {
+      const { waitlist } = await import("@/server/db/schema");
+      return getMetricCount(waitlist);
+    })() : Promise.resolve(0),
     getWaitlistEntries(),
     getRequests(),
   ]);
@@ -122,7 +135,7 @@ export default async function AdminPage() {
               </div>
             ) : (
               <ul className="divide-y divide-border/70">
-                {waitlistRows.map((entry) => (
+                {(waitlistRows as any[]).map((entry: any) => (
                   <li key={entry.id} className="grid grid-cols-[1.2fr,1.2fr,1fr,0.8fr,0.8fr] items-center gap-4 px-6 py-4 text-sm">
                     <span className="font-medium">{entry.name}</span>
                     <span className="truncate text-muted-foreground">{entry.email}</span>
