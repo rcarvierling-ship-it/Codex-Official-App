@@ -92,7 +92,6 @@ function isRateLimited(ip: string, now: number) {
 
 export async function POST(request: Request) {
   try {
-    await ensureWaitlistTable();
   } catch (tableError) {
     console.error("[waitlist] Table creation failed:", tableError);
     return NextResponse.json(
