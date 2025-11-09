@@ -5,6 +5,9 @@ import { createHash, randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Types for returned rows
 type WaitlistRow = { id: string };
@@ -25,17 +28,9 @@ let waitlistTableEnsured = false;
 async function ensureWaitlistTable() {
   if (waitlistTableEnsured) return;
   try {
-    // Match exact Neon schema from DB_DIAGNOSTIC_SETUP.md
-    // Try to create extension first (may fail if not superuser, that's ok)
-    try {
-      await sql/*sql*/`create extension if not exists pgcrypto;`;
-    } catch (extError) {
-      // Extension may already exist or we may not have permissions - that's fine
-      console.log("[waitlist] pgcrypto extension check:", (extError as Error)?.message ?? extError);
-    }
+    try { await sql`create extension if not exists pgcrypto;`; } catch {}
     
-    // Create table with all columns from Neon schema
-    await sql/*sql*/`
+    await sql`
       create table if not exists public.waitlist (
         id           uuid primary key default gen_random_uuid(),
         name         text,
@@ -51,24 +46,13 @@ async function ensureWaitlistTable() {
       );
     `;
     
-    // Create index if it doesn't exist
     try {
-      await sql/*sql*/`
-        create index if not exists idx_waitlist_submitted_at
-          on public.waitlist (submitted_at desc);
-      `;
-    } catch (idxError) {
-      // Index may already exist
-      console.log("[waitlist] index creation check:", (idxError as Error)?.message ?? idxError);
-    }
-    
+      await sql`create index if not exists idx_waitlist_submitted_at on public.waitlist (submitted_at desc);`;
+    } catch {}
+
     waitlistTableEnsured = true;
-    console.log("[waitlist] Table ensured successfully");
   } catch (error) {
-    const errorMsg = (error as Error)?.message ?? String(error);
-    console.error("[waitlist] unable to ensure table exists:", errorMsg);
-    // Don't set waitlistTableEnsured to true so we retry on next request
-    throw error; // Re-throw so caller knows table creation failed
+    throw error;
   }
 }
 
@@ -91,14 +75,9 @@ function isRateLimited(ip: string, now: number) {
 }
 
 export async function POST(request: Request) {
-  try {
-  } catch (tableError) {
-    console.error("[waitlist] Table creation failed:", tableError);
+  try {} catch {
     return NextResponse.json(
-      { 
-        message: "Database setup error. Please contact support if this persists.",
-        error: "Table creation failed"
-      },
+      { message: "Database setup error." },
       { status: 500 }
     );
   }
@@ -114,32 +93,25 @@ export async function POST(request: Request) {
 
   const { name, email, organization, role, _topic } = parsed.data;
 
-  // Honeypot
   if (_topic && _topic.trim().length > 0) {
     return NextResponse.json({ ok: true }, { status: 200 });
   }
 
-  // Rate limit
   const ip = getClientIp(request);
   const now = Date.now();
   if (isRateLimited(ip, now)) {
     return NextResponse.json(
-      { message: "Too many submissions from this IP. Please try again later." },
+      { message: "Too many submissions from this IP." },
       { status: 429 }
     );
   }
 
-  // IP hash (stable/anonymized)
-  const secret =
-    process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "theofficialapp-secret";
+  const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "theofficialapp-secret";
   const ipHash = createHash("sha256").update(`${ip}:${secret}`).digest("hex");
   const userAgent = request.headers.get("user-agent") ?? "unknown";
 
   try {
-    // Use exact Neon schema: org, ip_hash, user_agent, submitted_at
-    // The table has both organization/org and ip_hash/iphash and user_agent/useragent columns
-    // We'll use: org (preferred), ip_hash, user_agent, submitted_at
-    const res = await sql/*sql*/`
+    const res = await sql`
       insert into waitlist (name, email, org, role, ip_hash, user_agent, submitted_at)
       values (${name}, ${email}, ${organization ?? null}, ${role}, ${ipHash}, ${userAgent}, now())
       on conflict (email) do update set
@@ -152,32 +124,42 @@ export async function POST(request: Request) {
       returning id
     `;
     const insertedId = (res as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
+
+    // ✅ SEND EMAIL HERE (after success)
+    try {
+      await resend.emails.send({
+        from: "The Official App <no-reply@the-official-app.com>",
+        to: email,
+        subject: "You're on the waitlist ✅",
+        html: `
+        <div style="font-family: Arial; font-size: 16px;">
+          <p>Hey ${name},</p>
+          <p>Thanks for joining the waitlist for <b>The Official App</b> 🎉</p>
+          <p>We’ll notify you when access opens.</p>
+          <br/>
+          <p>– Reese & The Official App Team</p>
+        </div>
+        `,
+      });
+    } catch (err) {
+      console.error("[waitlist email] failed:", err);
+    }
+
     return NextResponse.json({ id: insertedId }, { status: 201 });
+
   } catch (err: any) {
     const errorMsg = String(err?.message ?? "");
-    console.error("[api/waitlist] insert failed:", errorMsg);
-    
-    if (errorMsg.includes("relation") && errorMsg.includes("does not exist")) {
-      return NextResponse.json(
-        { message: "Table 'waitlist' is missing in the database." },
-        { status: 500 }
-      );
-    }
-    if (errorMsg.includes("duplicate key") || errorMsg.includes("unique constraint")) {
+    if (errorMsg.includes("duplicate key")) {
       return NextResponse.json({ message: "Already on the waitlist." }, { status: 409 });
     }
-    return NextResponse.json({ 
-      message: "Failed to save waitlist entry.", 
-      error: errorMsg 
-    }, { status: 500 });
+    return NextResponse.json({ message: "Failed to save waitlist entry.", error: errorMsg }, { status: 500 });
   }
 }
 
 export async function GET() {
   try {
     await ensureWaitlistTable();
-    // Use org column (matches Neon schema) and submitted_at
-    const { rows } = await sql/*sql*/`
+    const { rows } = await sql`
       select id, name, email, org as organization, role, submitted_at
       from waitlist
       order by submitted_at desc
@@ -185,7 +167,6 @@ export async function GET() {
     `;
     return NextResponse.json(rows, { status: 200 });
   } catch (err: any) {
-    console.error("[api/waitlist] list failed:", err?.message || err);
     return NextResponse.json({ message: "Internal error" }, { status: 500 });
   }
 }
