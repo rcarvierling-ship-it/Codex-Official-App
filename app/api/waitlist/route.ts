@@ -5,9 +5,7 @@ import { createHash, randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { Resend } from "resend";
 
 // Types for returned rows
 type WaitlistRow = { id: string };
@@ -81,6 +79,17 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("Missing RESEND_API_KEY");
+    return NextResponse.json(
+      { error: "Email service not configured" },
+      { status: 500 }
+    );
+  }
+
+  const resend = new Resend(apiKey);
 
   const body = await request.json().catch(() => null);
   const parsed = waitlistPayloadSchema.safeParse(body);
