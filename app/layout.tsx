@@ -27,7 +27,11 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-sans antialiased">
         <div className="border-b bg-background/80">
+<<<<<<< HEAD
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:py-3">
+=======
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
             <Navbar />
             {/* server-side auth button to avoid client provider in root */}
             <AuthButtonServer />

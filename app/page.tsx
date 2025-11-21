@@ -8,10 +8,13 @@ import {
   ShieldCheck,
   Users2,
   Wrench,
+<<<<<<< HEAD
   ArrowRight,
   CheckCircle2,
   Sparkles,
   TrendingUp,
+=======
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
 } from "lucide-react";
 
 import {
@@ -36,44 +39,70 @@ const featureCards = [
   {
     title: "Real-time Event Management",
     description:
+<<<<<<< HEAD
       "Create, reschedule, and broadcast updates across teams with ease. Keep everyone in sync with instant notifications.",
     icon: CalendarClock,
     color: "text-cyan-400",
+=======
+      "Create, reschedule, and broadcast updates across teams with ease.",
+    icon: CalendarClock,
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
   {
     title: "Role-Based Access",
     description:
+<<<<<<< HEAD
       "Give ADs, coaches, and officials the tools they need with proper guardrails and permissions.",
     icon: ShieldCheck,
     color: "text-emerald-400",
+=======
+      "Give ADs, coaches, and officials the tools they need with guardrails.",
+    icon: ShieldCheck,
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
   {
     title: "Instant Assignments",
     description:
+<<<<<<< HEAD
       "Match officials based on availability, certifications, and distance automatically.",
     icon: ClipboardList,
     color: "text-blue-400",
+=======
+      "Match officials based on availability, certifications, and distance.",
+    icon: ClipboardList,
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
   {
     title: "Built-in Communication",
     description:
       "Send announcements, confirmations, and alerts from one command center.",
     icon: MessageSquare,
+<<<<<<< HEAD
     color: "text-purple-400",
+=======
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
   {
     title: "Team Coordination",
     description:
+<<<<<<< HEAD
       "Manage rosters, staff, and logistics across multiple schools or leagues seamlessly.",
     icon: Users2,
     color: "text-orange-400",
+=======
+      "Manage rosters, staff, and logistics across multiple schools or leagues.",
+    icon: Users2,
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
   {
     title: "Developer Tools",
     description:
       "APIs, webhooks, and sandbox data to connect scheduling with operations.",
     icon: Wrench,
+<<<<<<< HEAD
     color: "text-pink-400",
+=======
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
 ];
 
@@ -89,20 +118,32 @@ const howItWorks = [
   {
     title: "Create leagues & schools",
     description:
+<<<<<<< HEAD
       "Set up programs, import rosters, and define who can approve events. Get started in minutes.",
     icon: Sparkles,
+=======
+      "Set up programs, import rosters, and define who can approve events.",
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
   {
     title: "Schedule events & invite officials",
     description:
+<<<<<<< HEAD
       "Build calendars, request crews, and share live updates instantly with all stakeholders.",
     icon: CalendarClock,
+=======
+      "Build calendars, request crews, and share live updates instantly.",
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
   {
     title: "Approve requests & track assignments",
     description:
+<<<<<<< HEAD
       "Review availability, confirm assignments, and monitor status in real time from anywhere.",
     icon: TrendingUp,
+=======
+      "Review availability, confirm assignments, and monitor status in real time.",
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
 ];
 
@@ -116,12 +157,20 @@ const faq = [
   {
     question: "How does The Official App help athletic directors?",
     answer:
+<<<<<<< HEAD
       "We centralize scheduling, approvals, assignments, communication, and payouts so ADs can run entire seasons without juggling spreadsheets or group chats. Everything you need is in one place.",
+=======
+      "We centralize scheduling, approvals, assignments, communication, and payouts so ADs can run entire seasons without juggling spreadsheets or group chats.",
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
   {
     question: "Can officials manage their own availability?",
     answer:
+<<<<<<< HEAD
       "Yes. Officials update availability, request to work, and receive confirmations automatically, while assignors keep complete oversight and control.",
+=======
+      "Yes. Officials update availability, request to work, and receive confirmations automatically, while assignors keep complete oversight.",
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
   },
   {
     question: "What integrations do you support?",
@@ -146,6 +195,7 @@ export default async function HomePage() {
   }
 
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-border/50">
@@ -436,6 +486,163 @@ export default async function HomePage() {
                 <CardContent className="relative z-10">
                   <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                     {feature.description}
+=======
+    <div className="space-y-24 pb-32">
+      <section className="relative overflow-hidden border-b border-border">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(47,255,203,0.18),_transparent_60%)]" />
+        <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-20 md:grid-cols-[1.1fr,0.9fr] md:items-center">
+          <div className="space-y-6">
+            <Badge className="w-fit border border-[hsl(var(--accent)/0.3)] bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))]">
+              All-in-one sports ops
+            </Badge>
+            <h1 className="text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
+              The Official App — League &amp; Event Management
+            </h1>
+            <p className="max-w-2xl text-lg text-muted-foreground">
+              Power athletic departments with real-time scheduling, approvals,
+              officials workflows, and communication tools built for schools,
+              leagues, and assignors.
+            </p>
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <Button
+                asChild
+                size="lg"
+                className="bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent)/0.9)]"
+              >
+                <Link href="/demo">View Live Demo</Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="border border-[hsl(var(--accent)/0.4)] bg-transparent text-foreground hover:border-[hsl(var(--accent)/0.6)] hover:text-[hsl(var(--accent))]"
+              >
+                <Link href="#waitlist">Join Waitlist</Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="ghost"
+                className="border border-[hsl(var(--accent)/0.4)] bg-transparent text-foreground hover:border-[hsl(var(--accent)/0.6)] hover:text-[hsl(var(--accent))]"
+              >
+                <Link href="/login">Sign In</Link>
+              </Button>
+            </div>
+            <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
+              Fast • Secure • Built for schools &amp; leagues
+            </p>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-md">
+            <div className="absolute inset-0 rounded-3xl bg-[radial-gradient(circle,_rgba(47,255,203,0.18),_transparent_70%)] blur-3xl" />
+            <div className="relative flex flex-col gap-5 rounded-3xl border border-[hsl(var(--accent)/0.3)] bg-card/80 p-6 shadow-2xl backdrop-blur">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                    Interactive demo
+                  </p>
+                  <p className="text-lg font-semibold text-foreground">
+                    Game Day Command
+                  </p>
+                </div>
+                <div className="rounded-full border border-[hsl(var(--accent)/0.3)] bg-[hsl(var(--accent)/0.15)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[hsl(var(--accent))]">
+                  Live
+                </div>
+              </div>
+              <div className="grid gap-3">
+                {heroMetrics.map((metric) => (
+                  <div
+                    key={metric.label}
+                    className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/60 px-4 py-3 text-sm"
+                  >
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                        {metric.label}
+                      </p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {metric.value}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-[hsl(var(--accent)/0.15)] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[hsl(var(--accent))]">
+                      {metric.delta}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-border/60 bg-background/60">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-10 text-center">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Trusted by modern programs
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground md:gap-10">
+            {partnerLogos.map((name) => (
+              <span
+                key={name}
+                className="rounded-full border border-border/60 bg-card/70 px-4 py-2 text-[13px] tracking-wide text-muted-foreground"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl space-y-10 px-6">
+        <div className="space-y-3 text-center">
+          <h2 className="text-3xl font-semibold">Everything You Need</h2>
+          <p className="text-sm text-muted-foreground">
+            Powerful workflows designed to simplify sports league operations.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {featureCards.map((feature) => (
+            <Card
+              key={feature.title}
+              className="border-border/80 bg-card/80 transition hover:border-[hsl(var(--accent)/0.4)] hover:bg-card/90"
+            >
+              <CardHeader className="flex flex-row items-center gap-3">
+                <feature.icon className="h-5 w-5 text-[hsl(var(--accent))]" />
+                <CardTitle className="text-lg">{feature.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  {feature.description}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-y border-border bg-card/70 py-20">
+        <div className="mx-auto flex max-w-5xl flex-col gap-10 px-6">
+          <div className="space-y-2 text-center">
+            <h2 className="text-3xl font-semibold">How it works</h2>
+            <p className="text-sm text-muted-foreground">
+              Launch your league ops in three simple steps.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {howItWorks.map((step, index) => (
+              <Card
+                key={step.title}
+                className="border-border/70 bg-background/70 shadow-sm"
+              >
+                <CardContent className="flex flex-col gap-3 p-6">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--accent)/0.2)] text-sm font-semibold text-[hsl(var(--accent))]">
+                    {index + 1}
+                  </span>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {step.description}
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
                   </p>
                 </CardContent>
               </Card>
@@ -444,6 +651,7 @@ export default async function HomePage() {
         </div>
       </section>
 
+<<<<<<< HEAD
       {/* How It Works Section */}
       <section className="relative border-y border-border bg-card/50 py-12 sm:py-16 md:py-20 overflow-hidden">
         {/* Connecting Lines Between Steps */}
@@ -677,6 +885,89 @@ export default async function HomePage() {
                 Terms
               </Link>
             </div>
+=======
+      <section
+        id="waitlist"
+        className="mx-auto flex max-w-6xl flex-col gap-12 px-6 md:flex-row md:items-start"
+      >
+        <div className="md:w-1/2 space-y-4">
+          <Badge className="border border-[hsl(var(--accent)/0.3)] bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))]">
+            Priority access
+          </Badge>
+          <h2 className="text-3xl font-semibold">Join the Waitlist</h2>
+          <p className="text-base text-muted-foreground">
+            Be among the first to experience modern league operations. We'll
+            reach out with onboarding resources and invite codes.
+          </p>
+          <ul className="space-y-3 text-sm text-muted-foreground">
+            {waitlistBullets.map((bullet) => (
+              <li
+                key={bullet}
+                className="flex items-start gap-2 rounded-xl border border-border/60 bg-background/60 px-4 py-3"
+              >
+                <span className="mt-0.5 text-[hsl(var(--accent))]">•</span>
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="pt-4">
+            <p className="text-sm text-muted-foreground mb-3">
+              Already have access? Sign in to your account.
+            </p>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/login">Sign In</Link>
+            </Button>
+          </div>
+        </div>
+        <div className="md:w-1/2">
+          <WaitlistForm />
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl space-y-8 px-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-semibold">Frequently Asked Questions</h2>
+        </div>
+        <Accordion type="single" collapsible className="space-y-3">
+          {faq.map((item, index) => (
+            <AccordionItem
+              key={item.question}
+              value={`faq-${index}`}
+              className="rounded-xl border border-border/70 bg-card/80 px-4"
+            >
+              <AccordionTrigger className="text-left text-base font-medium text-foreground">
+                {item.question}
+              </AccordionTrigger>
+              <AccordionContent className="text-sm text-muted-foreground">
+                {item.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </section>
+
+      <footer className="border-t border-border bg-card/80 py-12">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-6 md:flex-row">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} The Official App. All rights reserved.
+          </p>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <Link href="/demo" className="transition hover:text-foreground">
+              Demo
+            </Link>
+            <Link href="#waitlist" className="transition hover:text-foreground">
+              Join Waitlist
+            </Link>
+            <Link href="/login" className="transition hover:text-foreground">
+              Sign In
+            </Link>
+            <Link href="/privacy" className="transition hover:text-foreground">
+              Privacy
+            </Link>
+            <Link href="/terms" className="transition hover:text-foreground">
+              Terms
+            </Link>
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
           </div>
         </div>
       </footer>

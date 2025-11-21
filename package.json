@@ -71,6 +71,10 @@
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "^7.2.0",
     "recharts": "^2.15.1",
+<<<<<<< HEAD
+=======
+    "resend": "^6.4.2",
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
     "server-only": "^0.0.1",
     "sonner": "^2.0.1",
     "tailwind-merge": "^3.0.2",

@@ -59,6 +59,10 @@
 35. **app/api/waitlist/route.ts**
    - Already had `runtime='nodejs'`
    - Updated to use dynamic imports for db
+<<<<<<< HEAD
+=======
+   - Resend integration already lazy-loaded (good!)
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
 
 36. **app/api/events/route.ts**
    - Added `export const runtime = "nodejs"`
@@ -83,11 +87,19 @@
 ✅ **Lazy Loading**: Drizzle/Vercel Postgres only imported when env vars exist
 ✅ **Graceful Degradation**: App builds and runs even without DB env vars
 ✅ **Clear Error Messages**: Production logs show helpful errors when config is missing
+<<<<<<< HEAD
+=======
+✅ **Optional Integrations**: Resend email already lazy-loaded (wrapped in env check)
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
 
 ## Environment Variables Required for Production
 
 - `NEXTAUTH_SECRET` or `AUTH_SECRET` (required)
 - `POSTGRES_URL_NON_POOLING` or `POSTGRES_URL` or `DATABASE_URL` (optional, but needed for real data)
+<<<<<<< HEAD
+=======
+- `RESEND_API_KEY` and `EMAIL_FROM` (optional, for email features)
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
 
 ## Build Status
 

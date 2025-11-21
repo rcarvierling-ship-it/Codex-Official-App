@@ -159,71 +159,122 @@ export function WaitlistForm() {
   return (
     <form
       onSubmit={form.handleSubmit(handleSubmit)}
+<<<<<<< HEAD
       className="space-y-4 sm:space-y-5 rounded-2xl border border-border bg-card/80 p-4 sm:p-6 shadow-lg backdrop-blur"
     >
       <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="name" className="text-sm sm:text-base">Name</Label>
+=======
+      className="space-y-5 rounded-2xl border border-border bg-card/80 p-6 shadow-lg backdrop-blur"
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="name">Name</Label>
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
           <Input
             id="name"
             placeholder="Jordan Fisher"
             autoComplete="name"
+<<<<<<< HEAD
             className="text-sm sm:text-base"
             {...form.register("name")}
           />
           {form.formState.errors.name ? (
             <p className="text-xs sm:text-sm text-red-400">
+=======
+            {...form.register("name")}
+          />
+          {form.formState.errors.name ? (
+            <p className="text-xs text-red-400">
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
               {form.formState.errors.name.message}
             </p>
           ) : null}
         </div>
         <div className="flex flex-col gap-2">
+<<<<<<< HEAD
           <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
+=======
+          <Label htmlFor="email">Email</Label>
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
           <Input
             id="email"
             type="email"
             placeholder="you@school.edu"
             autoComplete="email"
+<<<<<<< HEAD
             className="text-sm sm:text-base"
             {...form.register("email")}
           />
           {form.formState.errors.email ? (
             <p className="text-xs sm:text-sm text-red-400">
+=======
+            {...form.register("email")}
+          />
+          {form.formState.errors.email ? (
+            <p className="text-xs text-red-400">
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
               {form.formState.errors.email.message}
             </p>
           ) : null}
         </div>
       </div>
 
+<<<<<<< HEAD
       <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="organization" className="text-sm sm:text-base">Organization</Label>
+=======
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="organization">Organization</Label>
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
           <Input
             id="organization"
             placeholder="Central High School"
             autoComplete="organization"
+<<<<<<< HEAD
             className="text-sm sm:text-base"
             {...form.register("organization")}
           />
           {form.formState.errors.organization ? (
             <p className="text-xs sm:text-sm text-red-400">
+=======
+            {...form.register("organization")}
+          />
+          {form.formState.errors.organization ? (
+            <p className="text-xs text-red-400">
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
               {form.formState.errors.organization.message}
             </p>
           ) : null}
         </div>
         <div className="flex flex-col gap-2">
+<<<<<<< HEAD
           <Label className="text-sm sm:text-base">Role</Label>
+=======
+          <Label>Role</Label>
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
           <Controller
             control={form.control}
             name="role"
             render={({ field }) => (
               <Select onValueChange={field.onChange} value={field.value}>
+<<<<<<< HEAD
                 <SelectTrigger className="text-sm sm:text-base">
+=======
+                <SelectTrigger>
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent className="bg-card text-card-foreground">
                   {roleOptions.map((option) => (
+<<<<<<< HEAD
                     <SelectItem key={option.value} value={option.value} className="text-sm sm:text-base">
+=======
+                    <SelectItem key={option.value} value={option.value}>
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
                       {option.label}
                     </SelectItem>
                   ))}
@@ -232,7 +283,11 @@ export function WaitlistForm() {
             )}
           />
           {form.formState.errors.role ? (
+<<<<<<< HEAD
             <p className="text-xs sm:text-sm text-red-400">
+=======
+            <p className="text-xs text-red-400">
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
               {form.formState.errors.role.message}
             </p>
           ) : null}
@@ -252,7 +307,11 @@ export function WaitlistForm() {
         <Button
           type="submit"
           disabled={isSubmitting || cooldownRemaining > 0}
+<<<<<<< HEAD
           className="w-full bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent)/0.9)] sm:w-auto text-sm sm:text-base py-6 sm:py-7"
+=======
+          className="w-full bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent)/0.9)] sm:w-auto"
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
         >
           {isSubmitting
             ? "Submitting..."
@@ -261,12 +320,21 @@ export function WaitlistForm() {
             : "Join Waitlist"}
         </Button>
         {cooldownRemaining > 0 ? (
+<<<<<<< HEAD
           <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             You can submit again in {Math.ceil(cooldownRemaining / 1000)}s.
           </p>
         ) : (
           <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             No spam. We'll only email major updates.
+=======
+          <p className="text-xs text-muted-foreground">
+            You can submit again in {Math.ceil(cooldownRemaining / 1000)}s.
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            No spam. We’ll only email major updates.
+>>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
           </p>
         )}
       </div>
