@@ -1,5 +1,6 @@
 import 'server-only';
 import { sql } from "@/lib/db";
+import { AccessScope, filterEntitiesByScope } from "@/lib/scope";
 import { pick } from "@/lib/util/pick";
 
 export type RequestStatus = "PENDING" | "APPROVED" | "DECLINED";
@@ -12,12 +13,12 @@ export type Request = {
   message?: string | null;
 };
 
-export async function getRequests(): Promise<Request[]> {
+export async function getRequests(scope?: AccessScope, eventsInScope?: { id: string; schoolId?: string | null; leagueId?: string | null }[]): Promise<Request[]> {
   try {
     // Select * to adapt to varying schemas
     const { rows } = await sql`select * from requests order by 1 desc`;
 
-    return rows.map((r: any) => {
+    const normalized = rows.map((r: any) => {
       const id = String(pick(r, ["id", "request_id", "uuid"], crypto.randomUUID()));
       const eventId = String(pick(r, ["event_id", "eventId", "event"], ""));
       const userId = String(pick(r, ["user_id", "userId", "user"], ""));
@@ -41,6 +42,22 @@ export async function getRequests(): Promise<Request[]> {
 
       return { id, eventId, userId, status: s, submittedAt, message };
     });
+
+    const hasScope =
+      scope &&
+      (scope.userLeagueIds.length > 0 || scope.userSchoolIds.length > 0 || (scope.userTeamIds?.length ?? 0) > 0);
+    if (!scope) return normalized;
+    if (!hasScope) return [];
+
+    const eventSet = new Set(
+      (eventsInScope ?? []).filter((evt) => filterEntitiesByScope([evt], scope).length > 0).map((evt) => evt.id)
+    );
+
+    if (eventSet.size === 0) {
+      return [];
+    }
+
+    return normalized.filter((request) => eventSet.has(request.eventId));
   } catch {
     return [];
   }

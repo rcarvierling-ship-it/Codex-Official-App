@@ -3,6 +3,7 @@ import { getSessionServer } from "./auth";
 import { normalizeRole, type Role } from "@/lib/nav";
 import { roleAllows } from "@/lib/acl";
 import { getUserSchool } from "@/lib/repos/schools";
+import { buildAccessScope } from "@/lib/scope";
 
 type RequireAuthOptions = {
   requireSchool?: boolean;
@@ -27,6 +28,12 @@ async function attachSchool(session: any, requireSchool: boolean) {
   if (membership?.schoolId) {
     (session.user as any).schoolId = membership.schoolId;
     (session.user as any).school = membership.school ?? null;
+    const scoped = buildAccessScope(session.user, {
+      schoolId: membership.schoolId,
+      school: membership.school,
+    }, { allowEmpty: true });
+    (session.user as any).userSchoolIds = scoped.userSchoolIds;
+    (session.user as any).userLeagueIds = scoped.userLeagueIds;
     return membership;
   }
 

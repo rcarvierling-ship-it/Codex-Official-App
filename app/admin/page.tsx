@@ -9,6 +9,7 @@ import { getRequests } from "@lib/repos/requests";
 import { hasDbEnv } from "@/lib/db";
 import { getEvents } from "@/lib/repos/events";
 import { getUsers } from "@/lib/repos/users";
+import { buildAccessScope } from "@/lib/scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,12 +44,21 @@ export default async function AdminPage() {
   const activeSchoolId = (session.user as any)?.schoolId ?? null;
   const activeSchoolName = (session.user as any)?.school?.name ?? "";
 
-  const [events, users, waitlistRowsRaw, requests] = await Promise.all([
-    getEvents(),
-    getUsers(),
+  const scope = buildAccessScope(
+    session.user,
+    { schoolId: activeSchoolId, school: (session.user as any)?.school ?? null },
+    { allowEmpty: true }
+  );
+  const [events, users, waitlistRowsRaw] = await Promise.all([
+    getEvents(scope),
+    getUsers(scope),
     getWaitlistEntries(),
-    getRequests(),
   ]);
+
+  const requests = await getRequests(
+    scope,
+    events.map((event) => ({ id: event.id, schoolId: event.schoolId ?? null, leagueId: null }))
+  );
 
   const eventsForSchool = activeSchoolId
     ? events.filter((event) => event.schoolId === activeSchoolId)

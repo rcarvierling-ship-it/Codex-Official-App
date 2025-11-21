@@ -1,6 +1,7 @@
 import "server-only";
 import { randomUUID } from "crypto";
 import { sql } from "@lib/db";
+import { filterEntitiesByScope, type AccessScope } from "@/lib/scope";
 import { pick } from "@/lib/util/pick";
 
 export type Event = {
@@ -12,10 +13,10 @@ export type Event = {
   venueId?: string | null;
 };
 
-export async function getEvents(): Promise<Event[]> {
+export async function getEvents(scope?: AccessScope): Promise<Event[]> {
   try {
     const { rows } = await sql<Record<string, unknown>>`select * from events order by 1 desc`;
-    return rows.map((r) => ({
+    const normalized = rows.map((r) => ({
       id: String(pick(r, ['id', 'event_id', 'uuid'], randomUUID())),
       schoolId: pick<string | null>(r, ['school_id', 'schoolid', 'school', 'org_id'], null),
       name: String(pick(r, ['name', 'title', 'event_name', 'eventtitle', 'label'], 'Untitled Event')),
@@ -23,6 +24,11 @@ export async function getEvents(): Promise<Event[]> {
       endsAt: pick<string | null>(r, ['ends_at', 'end_time', 'end'], null),
       venueId: pick<string | null>(r, ['venue_id', 'venueId', 'venue'], null),
     }));
+    const hasScope =
+      scope &&
+      (scope.userLeagueIds.length > 0 || scope.userSchoolIds.length > 0 || (scope.userTeamIds?.length ?? 0) > 0);
+    if (!hasScope && scope) return [];
+    return filterEntitiesByScope(normalized, scope);
   } catch {
     return [];
   }
