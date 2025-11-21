@@ -15,18 +15,22 @@ export const dynamic = "force-dynamic";
 
 export default async function RequestsPage() {
   const session = await requireAuth();
-  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+  const user = session.user as any;
+  const canSeeAll = user?.canSeeAll ?? false;
+  const accessibleSchools = user?.accessibleSchools ?? [];
+  const accessibleLeagues = user?.accessibleLeagues ?? [];
+
+  const filterBy = canSeeAll
+    ? null
+    : { schoolIds: accessibleSchools, leagueIds: accessibleLeagues };
 
   const [requests, events, users] = await Promise.all([
     getRequests(),
-    getEvents(),
+    getEvents(filterBy),
     getUsers(),
   ]);
 
-  const eventsForSchool = activeSchoolId
-    ? events.filter((event) => event.schoolId === activeSchoolId)
-    : events;
-  const eventMap = new Map(eventsForSchool.map((e) => [e.id, e]));
+  const eventMap = new Map(events.map((e) => [e.id, e]));
   const userMap = new Map(users.map((u) => [u.id, u]));
   const scopedRequests = requests.filter((request) => eventMap.has(request.eventId));
 

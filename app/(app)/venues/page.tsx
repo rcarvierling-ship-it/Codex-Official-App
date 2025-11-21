@@ -26,14 +26,18 @@ async function getVenues() {
 
 export default async function VenuesPage() {
   const session = await requireAuth();
-  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+  const user = session.user as any;
+  const canSeeAll = user?.canSeeAll ?? false;
+  const accessibleSchools = user?.accessibleSchools ?? [];
+  const accessibleLeagues = user?.accessibleLeagues ?? [];
 
-  const [venues, events] = await Promise.all([getVenues(), getEvents()]);
-  const eventsForSchool = activeSchoolId
-    ? events.filter((event) => event.schoolId === activeSchoolId)
-    : events;
+  const filterBy = canSeeAll
+    ? null
+    : { schoolIds: accessibleSchools, leagueIds: accessibleLeagues };
+
+  const [venues, events] = await Promise.all([getVenues(), getEvents(filterBy)]);
   const relevantVenueIds = new Set(
-    eventsForSchool
+    events
       .map((event) => event.venueId)
       .filter((id): id is string => Boolean(id))
   );

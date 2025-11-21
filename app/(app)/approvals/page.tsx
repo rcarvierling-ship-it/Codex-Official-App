@@ -15,18 +15,22 @@ export const dynamic = "force-dynamic";
 
 export default async function ApprovalsPage() {
   const { session } = await requireRole("AD");
-  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+  const user = session.user as any;
+  const canSeeAll = user?.canSeeAll ?? false;
+  const accessibleSchools = user?.accessibleSchools ?? [];
+  const accessibleLeagues = user?.accessibleLeagues ?? [];
+
+  const filterBy = canSeeAll
+    ? null
+    : { schoolIds: accessibleSchools, leagueIds: accessibleLeagues };
 
   const [requests, events, users] = await Promise.all([
     getRequests(),
-    getEvents(),
+    getEvents(filterBy),
     getUsers(),
   ]);
 
-  const eventsForSchool = activeSchoolId
-    ? events.filter((event) => event.schoolId === activeSchoolId)
-    : events;
-  const eventMap = new Map(eventsForSchool.map((e) => [e.id, e]));
+  const eventMap = new Map(events.map((e) => [e.id, e]));
   const pendingRequests = requests
     .filter((r) => r.status === "PENDING")
     .filter((r) => eventMap.has(r.eventId));

@@ -10,16 +10,18 @@ export const dynamic = "force-dynamic";
 
 export default async function OfficialsPage() {
   const session = await requireAuth();
-  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+  const user = session.user as any;
+  const canSeeAll = user?.canSeeAll ?? false;
+  const accessibleSchools = user?.accessibleSchools ?? [];
   const users = await getUsers();
   const officials = users.filter((u) => u.role === "OFFICIAL" || u.role === null);
-  const scopedOfficials = activeSchoolId
-    ? officials.filter((official) =>
-        Array.isArray(official.schoolIds)
-          ? official.schoolIds.includes(activeSchoolId)
-          : true
-      )
-    : officials;
+  const scopedOfficials = canSeeAll
+    ? officials
+    : officials.filter((official) =>
+        Array.isArray(official.schoolIds) && official.schoolIds.length > 0
+          ? official.schoolIds.some((id) => accessibleSchools.includes(id))
+          : false
+      );
 
   return (
     <div className="space-y-6">

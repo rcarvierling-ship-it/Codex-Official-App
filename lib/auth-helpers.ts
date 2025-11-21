@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionServer } from "./auth";
 import { normalizeRole, type Role } from "@/lib/nav";
 import { roleAllows } from "@/lib/acl";
-import { getUserSchool } from "@/lib/repos/schools";
+import { getUserSchool, getUserAccessibleSchoolsAndLeagues } from "@/lib/repos/schools";
 
 type RequireAuthOptions = {
   requireSchool?: boolean;
@@ -23,18 +23,25 @@ async function attachSchool(session: any, requireSchool: boolean) {
   const email = (session.user as any)?.email;
   if (!email) return null;
 
+  const role = (session.user as any)?.role;
   const membership = await getUserSchool(email);
+  const accessible = await getUserAccessibleSchoolsAndLeagues(email, role);
+
   if (membership?.schoolId) {
     (session.user as any).schoolId = membership.schoolId;
     (session.user as any).school = membership.school ?? null;
-    return membership;
   }
 
-  if (requireSchool) {
+  // Attach accessible schools and leagues for filtering
+  (session.user as any).accessibleSchools = accessible?.schoolIds ?? [];
+  (session.user as any).accessibleLeagues = accessible?.leagueIds ?? [];
+  (session.user as any).canSeeAll = accessible === null; // null means SUPER_ADMIN/ADMIN
+
+  if (requireSchool && !membership?.schoolId && accessible?.schoolIds.length === 0) {
     redirect("/onboarding");
   }
 
-  return null;
+  return membership;
 }
 
 /**

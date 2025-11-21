@@ -18,18 +18,25 @@ export default async function EventDetailPage({
   params: { id: string };
 }) {
   const session = await requireAuth();
-  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+  const user = session.user as any;
+  const canSeeAll = user?.canSeeAll ?? false;
+  const accessibleSchools = user?.accessibleSchools ?? [];
+  const accessibleLeagues = user?.accessibleLeagues ?? [];
   const { id } = params;
 
+  const filterBy = canSeeAll
+    ? null
+    : { schoolIds: accessibleSchools, leagueIds: accessibleLeagues };
+
   const [events, requests, assignments, users] = await Promise.all([
-    getEvents(),
+    getEvents(filterBy),
     getRequests(),
     getAssignments(),
     getUsers(),
   ]);
 
   const event = events.find((e) => e.id === id);
-  if (!event || (activeSchoolId && event.schoolId !== activeSchoolId)) {
+  if (!event) {
     notFound();
   }
 

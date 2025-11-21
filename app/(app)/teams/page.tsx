@@ -25,11 +25,13 @@ async function getTeams() {
 
 export default async function TeamsPage() {
   const session = await requireAuth();
-  const activeSchoolId = (session.user as any)?.schoolId ?? null;
+  const user = session.user as any;
+  const canSeeAll = user?.canSeeAll ?? false;
+  const accessibleSchools = user?.accessibleSchools ?? [];
   const teams = await getTeams();
-  const scopedTeams = activeSchoolId
-    ? teams.filter((team) => team.schoolId === activeSchoolId)
-    : teams;
+  const scopedTeams = canSeeAll
+    ? teams
+    : teams.filter((team) => team.schoolId && accessibleSchools.includes(team.schoolId));
 
   return (
     <div className="space-y-6">

@@ -31,24 +31,32 @@ export default async function DashboardPage() {
   }
 
   // For COACH and USER, show a simple dashboard
+  const user = session.user as any;
+  const canSeeAll = user?.canSeeAll ?? false;
+  const accessibleSchools = user?.accessibleSchools ?? [];
+  const accessibleLeagues = user?.accessibleLeagues ?? [];
+
+  const filterBy = canSeeAll
+    ? null
+    : { schoolIds: accessibleSchools, leagueIds: accessibleLeagues };
+
   const [events, requests, assignments, users] = await Promise.all([
-    getEvents(),
+    getEvents(filterBy),
     getRequests(),
     getAssignments(),
     getUsers(),
   ]);
 
-  const eventsForSchool = activeSchoolId
-    ? events.filter((event) => event.schoolId === activeSchoolId)
-    : events;
-  const eventIdSet = new Set(eventsForSchool.map((event) => event.id));
+  const eventIdSet = new Set(events.map((event) => event.id));
   const requestsForSchool = requests.filter((request) => eventIdSet.has(request.eventId));
   const assignmentsForSchool = assignments.filter((assignment) => eventIdSet.has(assignment.eventId));
-  const usersForSchool = users.filter((user) =>
-    activeSchoolId && Array.isArray(user.schoolIds) && user.schoolIds.length > 0
-      ? user.schoolIds.includes(activeSchoolId)
-      : true
-  );
+  const usersForSchool = canSeeAll
+    ? users
+    : users.filter((user) =>
+        Array.isArray(user.schoolIds) && user.schoolIds.length > 0
+          ? user.schoolIds.some((id) => accessibleSchools.includes(id))
+          : false
+      );
 
   const pendingRequests = requestsForSchool.filter((r) => r.status === "PENDING");
   const myAssignments = assignmentsForSchool.filter((a) => a.status === "ASSIGNED");
@@ -68,7 +76,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-sm text-muted-foreground">Upcoming Events</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-foreground">{eventsForSchool.length}</div>
+            <div className="text-2xl font-semibold text-foreground">{events.length}</div>
             <p className="text-xs text-muted-foreground mt-1">Total events</p>
           </CardContent>
         </Card>
@@ -112,7 +120,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-lg">Recent Events</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {eventsForSchool.slice(0, 5).map((event) => (
+            {events.slice(0, 5).map((event) => (
               <div key={event.id} className="flex items-center justify-between rounded-lg border bg-background/60 p-3">
                 <div>
                   <p className="font-medium text-foreground">{event.name}</p>
@@ -125,7 +133,7 @@ export default async function DashboardPage() {
                 </Button>
               </div>
             ))}
-            {eventsForSchool.length === 0 && (
+            {events.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">No events yet</p>
             )}
           </CardContent>

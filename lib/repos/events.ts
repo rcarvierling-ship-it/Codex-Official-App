@@ -6,23 +6,52 @@ import { pick } from "@/lib/util/pick";
 export type Event = {
   id: string;
   schoolId: string | null;
+  leagueId?: string | null;
   name: string;
   startsAt: string;
   endsAt?: string | null;
   venueId?: string | null;
 };
 
-export async function getEvents(): Promise<Event[]> {
+export async function getEvents(
+  filterBy?: { schoolIds?: string[]; leagueIds?: string[] } | null
+): Promise<Event[]> {
   try {
     const { rows } = await sql<Record<string, unknown>>`select * from events order by 1 desc`;
-    return rows.map((r) => ({
+    const allEvents = rows.map((r) => ({
       id: String(pick(r, ['id', 'event_id', 'uuid'], randomUUID())),
       schoolId: pick<string | null>(r, ['school_id', 'schoolid', 'school', 'org_id'], null),
+      leagueId: pick<string | null>(r, ['league_id', 'leagueId', 'league'], null),
       name: String(pick(r, ['name', 'title', 'event_name', 'eventtitle', 'label'], 'Untitled Event')),
       startsAt: String(pick(r, ['starts_at', 'start_time', 'start'], new Date().toISOString())),
       endsAt: pick<string | null>(r, ['ends_at', 'end_time', 'end'], null),
       venueId: pick<string | null>(r, ['venue_id', 'venueId', 'venue'], null),
     }));
+
+    // Apply filtering if provided
+    if (!filterBy) {
+      return allEvents;
+    }
+
+    const hasSchoolFilter = filterBy.schoolIds && filterBy.schoolIds.length > 0;
+    const hasLeagueFilter = filterBy.leagueIds && filterBy.leagueIds.length > 0;
+
+    // If no filters provided, return all events
+    if (!hasSchoolFilter && !hasLeagueFilter) {
+      return allEvents;
+    }
+
+    return allEvents.filter((event) => {
+      // Match if event's school is in the allowed schools
+      if (hasSchoolFilter && event.schoolId && filterBy.schoolIds!.includes(event.schoolId)) {
+        return true;
+      }
+      // Match if event's league is in the allowed leagues
+      if (hasLeagueFilter && event.leagueId && filterBy.leagueIds!.includes(event.leagueId)) {
+        return true;
+      }
+      return false;
+    });
   } catch {
     return [];
   }

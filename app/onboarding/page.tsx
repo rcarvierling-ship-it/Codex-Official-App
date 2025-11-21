@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireAuth } from "@/lib/auth-helpers";
+import { requireAuth, getAuthRole } from "@/lib/auth-helpers";
 import { getUserSchool, listSchools } from "@/lib/repos/schools";
 import { SchoolOnboardingForm } from "./SchoolOnboardingForm";
 
@@ -10,6 +10,21 @@ export const metadata = {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Get the appropriate redirect path based on role
+function getRedirectPath(role: string): string {
+  if (role === "SUPER_ADMIN" || role === "ADMIN") {
+    return "/admin";
+  }
+  if (role === "AD") {
+    return "/approvals";
+  }
+  if (role === "OFFICIAL") {
+    return "/assignments";
+  }
+  // For COACH and USER, go to dashboard
+  return "/dashboard";
+}
+
 export default async function OnboardingPage() {
   const session = await requireAuth({ requireSchool: false });
   const email = (session.user as any)?.email;
@@ -17,13 +32,16 @@ export default async function OnboardingPage() {
     redirect("/(auth)/login");
   }
 
-  const [membership, schools] = await Promise.all([
+  const [membership, schools, role] = await Promise.all([
     getUserSchool(email),
     listSchools(),
+    getAuthRole(),
   ]);
 
   if (membership?.schoolId) {
-    redirect("/");
+    // Redirect to role-appropriate dashboard
+    const redirectPath = getRedirectPath(role);
+    redirect(redirectPath);
   }
 
   return (

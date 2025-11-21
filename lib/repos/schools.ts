@@ -153,3 +153,81 @@ export async function getUserSchool(email: string): Promise<SchoolMembership | n
     school: await getSchoolById(schoolId),
   };
 }
+
+/**
+ * Get all school IDs and league IDs that a user has access to.
+ * Returns null if user should see everything (SUPER_ADMIN/ADMIN).
+ */
+export async function getUserAccessibleSchoolsAndLeagues(
+  email: string,
+  role?: string | null
+): Promise<{ schoolIds: string[]; leagueIds: string[] } | null> {
+  // SUPER_ADMIN and ADMIN see everything
+  if (role === "SUPER_ADMIN" || role === "ADMIN") {
+    return null;
+  }
+
+  if (!email) return { schoolIds: [], leagueIds: [] };
+
+  try {
+    // Get all schools the user is associated with
+    const schoolIds: string[] = [];
+
+    // From user_profiles
+    try {
+      const { rows } = await sql<{ school_id: string | null }>`
+        select school_id from user_profiles where email = ${email} and school_id is not null
+      `;
+      rows.forEach((row) => {
+        if (row.school_id) schoolIds.push(row.school_id);
+      });
+    } catch (error) {
+      console.warn("[schools] unable to read user_profiles for all schools", error);
+    }
+
+    // From users.active_school_id
+    try {
+      const { rows } = await sql<{ active_school_id: string | null }>`
+        select active_school_id from users where email = ${email} and active_school_id is not null
+      `;
+      rows.forEach((row) => {
+        if (row.active_school_id && !schoolIds.includes(row.active_school_id)) {
+          schoolIds.push(row.active_school_id);
+        }
+      });
+    } catch (error) {
+      console.warn("[schools] unable to read users.active_school_id", error);
+    }
+
+    // Get unique school IDs
+    const uniqueSchoolIds = Array.from(new Set(schoolIds));
+
+    if (uniqueSchoolIds.length === 0) {
+      return { schoolIds: [], leagueIds: [] };
+    }
+
+    // Get league IDs from schools
+    const leagueIds: string[] = [];
+    if (uniqueSchoolIds.length > 0) {
+      try {
+        // Query each school individually to get league IDs (more compatible)
+        for (const schoolId of uniqueSchoolIds) {
+          const school = await getSchoolById(schoolId);
+          if (school?.leagueId && !leagueIds.includes(school.leagueId)) {
+            leagueIds.push(school.leagueId);
+          }
+        }
+      } catch (error) {
+        console.warn("[schools] unable to read league_ids from schools", error);
+      }
+    }
+
+    return {
+      schoolIds: uniqueSchoolIds,
+      leagueIds: Array.from(new Set(leagueIds)),
+    };
+  } catch (error) {
+    console.warn("[schools] getUserAccessibleSchoolsAndLeagues failed", error);
+    return { schoolIds: [], leagueIds: [] };
+  }
+}

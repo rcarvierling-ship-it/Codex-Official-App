@@ -11,7 +11,9 @@ export const metadata = { title: "Activity" };
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function getActivityLogs(schoolFilter?: string | null) {
+async function getActivityLogs(
+  filterBy?: { schoolIds?: string[]; leagueIds?: string[] } | null
+) {
   try {
     const { rows } = await sql`select * from activity_logs order by created_at desc limit 100`;
     const mapped = rows.map((r: any) => ({
@@ -23,28 +25,31 @@ async function getActivityLogs(schoolFilter?: string | null) {
       details: r.details ?? r.metadata ?? null,
       createdAt: String(r.created_at ?? r.timestamp ?? new Date().toISOString()),
     }));
-    if (!schoolFilter) return mapped;
+    if (!filterBy) return mapped;
+    const schoolIds = filterBy.schoolIds ?? [];
     return mapped.filter((activity) => {
       if (
         activity.details &&
         typeof activity.details === "object" &&
         "schoolId" in (activity.details as Record<string, unknown>)
       ) {
-        return (activity.details as Record<string, unknown>).schoolId === schoolFilter;
+        const activitySchoolId = (activity.details as Record<string, unknown>).schoolId;
+        return schoolIds.includes(String(activitySchoolId));
       }
       return true;
     });
   } catch {
     // Fallback: create activity from recent events, requests, assignments
     const [events, requests, assignments] = await Promise.all([
-      getEvents(),
+      getEvents(filterBy),
       getRequests(),
       getAssignments(),
     ]);
 
+    const schoolIds = filterBy?.schoolIds ?? [];
     const activities = [
       ...events
-        .filter((event) => !schoolFilter || event.schoolId === schoolFilter)
+        .filter((event) => !filterBy || (event.schoolId && schoolIds.includes(event.schoolId)))
         .slice(0, 20)
         .map((e) => ({
         id: `event-${e.id}`,
@@ -56,7 +61,7 @@ async function getActivityLogs(schoolFilter?: string | null) {
         createdAt: e.startsAt,
       })),
       ...requests
-        .filter((request) => !schoolFilter || events.some((event) => event.id === request.eventId && event.schoolId === schoolFilter))
+        .filter((request) => !filterBy || events.some((event) => event.id === request.eventId && event.schoolId && schoolIds.includes(event.schoolId)))
         .slice(0, 20)
         .map((r) => ({
         id: `request-${r.id}`,
@@ -68,7 +73,7 @@ async function getActivityLogs(schoolFilter?: string | null) {
         createdAt: r.submittedAt,
       })),
       ...assignments
-        .filter((assignment) => !schoolFilter || events.some((event) => event.id === assignment.eventId && event.schoolId === schoolFilter))
+        .filter((assignment) => !filterBy || events.some((event) => event.id === assignment.eventId && event.schoolId && schoolIds.includes(event.schoolId)))
         .slice(0, 20)
         .map((a) => ({
         id: `assignment-${a.id}`,
@@ -89,8 +94,16 @@ async function getActivityLogs(schoolFilter?: string | null) {
 
 export default async function ActivityPage() {
   const { session } = await requireRole("ADMIN");
-  const activeSchoolId = (session.user as any)?.schoolId ?? null;
-  const activities = await getActivityLogs(activeSchoolId);
+  const user = session.user as any;
+  const canSeeAll = user?.canSeeAll ?? false;
+  const accessibleSchools = user?.accessibleSchools ?? [];
+  const accessibleLeagues = user?.accessibleLeagues ?? [];
+
+  const filterBy = canSeeAll
+    ? null
+    : { schoolIds: accessibleSchools, leagueIds: accessibleLeagues };
+
+  const activities = await getActivityLogs(filterBy);
 
   return (
     <div className="space-y-6">

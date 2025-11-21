@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,12 +40,30 @@ export default function SignupPage() {
       });
 
       if (response.status === 201) {
-        toast({
-          title: "Account created",
-          description: "You can now explore the interactive demo.",
+        // Automatically log in the user after registration
+        const signInResult = await signIn("credentials", {
+          email: values.email,
+          password: values.password,
+          redirect: false,
         });
-        router.push("/demo");
-        return;
+
+        if (signInResult?.ok) {
+          toast({
+            title: "Account created",
+            description: "Welcome! Let's set up your profile.",
+          });
+          // Redirect to onboarding to collect school/role information
+          router.push("/onboarding");
+          return;
+        } else {
+          // If auto-login fails, still redirect to login page
+          toast({
+            title: "Account created",
+            description: "Please sign in to continue.",
+          });
+          router.push("/login");
+          return;
+        }
       }
 
       const payload = await response.json().catch(() => null);
@@ -149,33 +168,43 @@ export default function SignupPage() {
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-xs sm:text-sm text-muted-foreground">
-          By signing up, you agree to our{" "}
-          <Link
-            href="/terms"
-            className="text-[hsl(var(--accent))] hover:underline"
-          >
-            Terms
-          </Link>{" "}
-          and{" "}
-          <Link
-            href="/privacy"
-            className="text-[hsl(var(--accent))] hover:underline"
-          >
-            Privacy Policy
-          </Link>
-          .
-        </p>
-
-        <p className="mt-4 text-center text-sm sm:text-base text-muted-foreground">
-          Want a peek first?{" "}
-          <Link
-            href="/demo"
-            className="font-semibold text-[hsl(var(--accent))] hover:underline"
-          >
-            Explore the demo
-          </Link>
-        </p>
+        <div className="mt-6 space-y-3">
+          <p className="text-xs sm:text-sm text-muted-foreground text-center">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-[hsl(var(--accent))] hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
+          <p className="text-center text-xs sm:text-sm text-muted-foreground">
+            By signing up, you agree to our{" "}
+            <Link
+              href="/terms"
+              className="text-[hsl(var(--accent))] hover:underline"
+            >
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/privacy"
+              className="text-[hsl(var(--accent))] hover:underline"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </p>
+          <p className="text-center text-xs sm:text-sm text-muted-foreground">
+            Want a peek first?{" "}
+            <Link
+              href="/demo"
+              className="font-semibold text-[hsl(var(--accent))] hover:underline"
+            >
+              Explore the demo
+            </Link>
+          </p>
+        </div>
       </div>
     </main>
   );

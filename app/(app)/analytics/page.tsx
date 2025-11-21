@@ -12,38 +12,40 @@ export const dynamic = "force-dynamic";
 
 export default async function AnalyticsPage() {
   const { session } = await requireRole("ADMIN");
-  const activeSchoolId = (session.user as any)?.schoolId ?? null;
-  const activeLeagueId = (session.user as any)?.school?.leagueId ?? null;
+  const user = session.user as any;
+  const canSeeAll = user?.canSeeAll ?? false;
+  const accessibleSchools = user?.accessibleSchools ?? [];
+  const accessibleLeagues = user?.accessibleLeagues ?? [];
+
+  const filterBy = canSeeAll
+    ? null
+    : { schoolIds: accessibleSchools, leagueIds: accessibleLeagues };
 
   const [events, requests, assignments, users] = await Promise.all([
-    getEvents(),
+    getEvents(filterBy),
     getRequests(),
     getAssignments(),
     getUsers(),
   ]);
 
-  const eventsForSchool = activeSchoolId
-    ? events.filter((event) => event.schoolId === activeSchoolId)
-    : events;
-
-  const eventIdSet = new Set(eventsForSchool.map((event) => event.id));
+  const eventIdSet = new Set(events.map((event) => event.id));
 
   const requestsForSchool = requests.filter((request) => eventIdSet.has(request.eventId));
   const assignmentsForSchool = assignments.filter((assignment) => eventIdSet.has(assignment.eventId));
   const officialsForSchool = users.filter((user) => {
     if (user.role && user.role !== "OFFICIAL") return false;
-    if (!activeSchoolId) return true;
+    if (canSeeAll) return true;
     if (Array.isArray(user.schoolIds) && user.schoolIds.length > 0) {
-      return user.schoolIds.includes(activeSchoolId);
+      return user.schoolIds.some((id) => accessibleSchools.includes(id));
     }
-    return true;
+    return false;
   });
 
   const now = new Date();
   const last7Days = startOfDay(subDays(now, 7));
   const last30Days = startOfDay(subDays(now, 30));
 
-  const recentEvents = eventsForSchool.filter(
+  const recentEvents = events.filter(
     (e) => new Date(e.startsAt) >= last30Days
   ).length;
 
@@ -73,7 +75,7 @@ export default async function AnalyticsPage() {
             <CardTitle className="text-sm text-muted-foreground">Total Events</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold text-foreground">{eventsForSchool.length}</div>
+            <div className="text-3xl font-semibold text-foreground">{events.length}</div>
             <p className="text-xs text-muted-foreground mt-1">
               {recentEvents} in last 30 days
             </p>

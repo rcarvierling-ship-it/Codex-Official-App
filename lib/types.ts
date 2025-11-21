@@ -34,6 +34,7 @@ export type Request = {
 export type Event = {
   id: string;
   schoolId: string | null;
+  leagueId?: string | null;
   name: string;
   startsAt: string;
   endsAt?: string | null;
