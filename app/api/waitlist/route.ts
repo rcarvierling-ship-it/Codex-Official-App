@@ -5,9 +5,18 @@ import { createHash, randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
-import { Resend } from 'resend';
+import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendClient: Resend | null = null;
+
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  if (!resendClient) {
+    resendClient = new Resend(apiKey);
+  }
+  return resendClient;
+}
 
 // Types for returned rows
 type WaitlistRow = { id: string };
@@ -126,23 +135,26 @@ export async function POST(request: Request) {
     const insertedId = (res as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
 
     // ✅ SEND EMAIL HERE (after success)
-    try {
-      await resend.emails.send({
-        from: "The Official App <no-reply@the-official-app.com>",
-        to: email,
-        subject: "You're on the waitlist ✅",
-        html: `
-        <div style="font-family: Arial; font-size: 16px;">
-          <p>Hey ${name},</p>
-          <p>Thanks for joining the waitlist for <b>The Official App</b> 🎉</p>
-          <p>We’ll notify you when access opens.</p>
-          <br/>
-          <p>– Reese & The Official App Team</p>
-        </div>
-        `,
-      });
-    } catch (err) {
-      console.error("[waitlist email] failed:", err);
+    const resend = getResendClient();
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from: "The Official App <no-reply@the-official-app.com>",
+          to: email,
+          subject: "You're on the waitlist ✅",
+          html: `
+          <div style="font-family: Arial; font-size: 16px;">
+            <p>Hey ${name},</p>
+            <p>Thanks for joining the waitlist for <b>The Official App</b> 🎉</p>
+            <p>We’ll notify you when access opens.</p>
+            <br/>
+            <p>– Reese & The Official App Team</p>
+          </div>
+          `,
+        });
+      } catch (err) {
+        console.error("[waitlist email] failed:", err);
+      }
     }
 
     return NextResponse.json({ id: insertedId }, { status: 201 });
