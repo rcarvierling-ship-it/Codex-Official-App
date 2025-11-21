@@ -3,6 +3,7 @@
 ## Files Changed
 
 ### Core Database & Infrastructure
+
 1. **lib/db.ts**
    - Added `import 'server-only'`
    - Updated connection string reading: `POSTGRES_URL_NON_POOLING || POSTGRES_URL || DATABASE_URL`
@@ -19,12 +20,14 @@
    - Added `import 'server-only'` (used by server-only repos)
 
 ### Repository Files (All Server-Only)
+
 4. **lib/repos/events.ts** - Added `import 'server-only'`
 5. **lib/repos/requests.ts** - Added `import 'server-only'`
 6. **lib/repos/users.ts** - Added `import 'server-only'`
 7. **lib/repos/assignments.ts** - Added `import 'server-only'`
 
 ### Pages with Database Access (All have `runtime='nodejs'` and `dynamic='force-dynamic'`)
+
 8. **app/(app)/dashboard/page.tsx**
 9. **app/(app)/events/page.tsx**
 10. **app/(app)/events/[id]/page.tsx**
@@ -49,6 +52,7 @@
 29. **app/page.tsx** (landing page - uses auth check)
 
 ### Test Pages
+
 30. **app/test/page.tsx**
 31. **app/test/roles/admin/page.tsx**
 32. **app/test/roles/ad/page.tsx**
@@ -56,28 +60,31 @@
 34. **app/test/roles/official/page.tsx**
 
 ### API Routes
+
 35. **app/api/waitlist/route.ts**
-   - Already had `runtime='nodejs'`
-   - Updated to use dynamic imports for db
-<<<<<<< HEAD
-=======
-   - Resend integration already lazy-loaded (good!)
->>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
+
+- Already had `runtime='nodejs'`
+- Updated to use dynamic imports for db
 
 36. **app/api/events/route.ts**
-   - Added `export const runtime = "nodejs"`
-   - Updated to use dynamic imports for db
+
+- Added `export const runtime = "nodejs"`
+- Updated to use dynamic imports for db
 
 37. **app/api/register/route.ts**
-   - Added `export const runtime = "nodejs"`
-   - Updated to use dynamic imports for db
+
+- Added `export const runtime = "nodejs"`
+- Updated to use dynamic imports for db
 
 ### Authentication
+
 38. **lib/auth.ts**
-   - Added `secret` field to `authOptions` for NextAuth
+
+- Added `secret` field to `authOptions` for NextAuth
 
 39. **middleware.ts**
-   - Improved error handling for missing NEXTAUTH_SECRET in production
+
+- Improved error handling for missing NEXTAUTH_SECRET in production
 
 ## Key Production Safety Features
 
@@ -87,19 +94,11 @@
 ✅ **Lazy Loading**: Drizzle/Vercel Postgres only imported when env vars exist
 ✅ **Graceful Degradation**: App builds and runs even without DB env vars
 ✅ **Clear Error Messages**: Production logs show helpful errors when config is missing
-<<<<<<< HEAD
-=======
-✅ **Optional Integrations**: Resend email already lazy-loaded (wrapped in env check)
->>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
 
 ## Environment Variables Required for Production
 
 - `NEXTAUTH_SECRET` or `AUTH_SECRET` (required)
 - `POSTGRES_URL_NON_POOLING` or `POSTGRES_URL` or `DATABASE_URL` (optional, but needed for real data)
-<<<<<<< HEAD
-=======
-- `RESEND_API_KEY` and `EMAIL_FROM` (optional, for email features)
->>>>>>> 6c4bb1b05f097714713564a61fd6e75c753c40a5
 
 ## Build Status
 
@@ -107,4 +106,3 @@
 ✅ No client components import server-only code
 ✅ All database access is server-side only
 ✅ App builds without database connection string
-

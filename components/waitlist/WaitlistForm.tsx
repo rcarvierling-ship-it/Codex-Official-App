@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
@@ -163,7 +163,9 @@ export function WaitlistForm() {
     >
       <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="name" className="text-sm sm:text-base">Name</Label>
+          <Label htmlFor="name" className="text-sm sm:text-base">
+            Name
+          </Label>
           <Input
             id="name"
             placeholder="Jordan Fisher"
@@ -178,7 +180,9 @@ export function WaitlistForm() {
           ) : null}
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
+          <Label htmlFor="email" className="text-sm sm:text-base">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"
@@ -197,7 +201,9 @@ export function WaitlistForm() {
 
       <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="organization" className="text-sm sm:text-base">Organization</Label>
+          <Label htmlFor="organization" className="text-sm sm:text-base">
+            Organization
+          </Label>
           <Input
             id="organization"
             placeholder="Central High School"
@@ -223,7 +229,11 @@ export function WaitlistForm() {
                 </SelectTrigger>
                 <SelectContent className="bg-card text-card-foreground">
                   {roleOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="text-sm sm:text-base">
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="text-sm sm:text-base"
+                    >
                       {option.label}
                     </SelectItem>
                   ))}
@@ -257,8 +267,8 @@ export function WaitlistForm() {
           {isSubmitting
             ? "Submitting..."
             : cooldownRemaining > 0
-            ? "You're on the list!"
-            : "Join Waitlist"}
+              ? "You're on the list!"
+              : "Join Waitlist"}
         </Button>
         {cooldownRemaining > 0 ? (
           <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">

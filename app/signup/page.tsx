@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -48,7 +48,8 @@ export default function SignupPage() {
       }
 
       const payload = await response.json().catch(() => null);
-      const message = payload?.message ?? "Unable to create an account right now.";
+      const message =
+        payload?.message ?? "Unable to create an account right now.";
 
       toast({
         title: "Signup failed",
@@ -75,12 +76,18 @@ export default function SignupPage() {
           Join The Official App
         </h1>
         <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-          Launch the immersive demo experience with a single signup. No credit card required.
+          Launch the immersive demo experience with a single signup. No credit
+          card required.
         </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4 sm:space-y-5">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="mt-6 space-y-4 sm:space-y-5"
+        >
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm sm:text-base">Name</Label>
+            <Label htmlFor="name" className="text-sm sm:text-base">
+              Name
+            </Label>
             <Input
               id="name"
               placeholder="Jordan Fisher"
@@ -89,12 +96,16 @@ export default function SignupPage() {
               {...register("name")}
             />
             {errors.name ? (
-              <p className="text-xs sm:text-sm text-red-400">{errors.name.message}</p>
+              <p className="text-xs sm:text-sm text-red-400">
+                {errors.name.message}
+              </p>
             ) : null}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
+            <Label htmlFor="email" className="text-sm sm:text-base">
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
@@ -104,12 +115,16 @@ export default function SignupPage() {
               {...register("email")}
             />
             {errors.email ? (
-              <p className="text-xs sm:text-sm text-red-400">{errors.email.message}</p>
+              <p className="text-xs sm:text-sm text-red-400">
+                {errors.email.message}
+              </p>
             ) : null}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
+            <Label htmlFor="password" className="text-sm sm:text-base">
+              Password
+            </Label>
             <Input
               id="password"
               type="password"
@@ -119,7 +134,9 @@ export default function SignupPage() {
               {...register("password")}
             />
             {errors.password ? (
-              <p className="text-xs sm:text-sm text-red-400">{errors.password.message}</p>
+              <p className="text-xs sm:text-sm text-red-400">
+                {errors.password.message}
+              </p>
             ) : null}
           </div>
 
@@ -134,13 +151,28 @@ export default function SignupPage() {
 
         <p className="mt-6 text-center text-xs sm:text-sm text-muted-foreground">
           By signing up, you agree to our{" "}
-          <Link href="/terms" className="text-[hsl(var(--accent))] hover:underline">Terms</Link> and{" "}
-          <Link href="/privacy" className="text-[hsl(var(--accent))] hover:underline">Privacy Policy</Link>.
+          <Link
+            href="/terms"
+            className="text-[hsl(var(--accent))] hover:underline"
+          >
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy"
+            className="text-[hsl(var(--accent))] hover:underline"
+          >
+            Privacy Policy
+          </Link>
+          .
         </p>
 
         <p className="mt-4 text-center text-sm sm:text-base text-muted-foreground">
           Want a peek first?{" "}
-          <Link href="/demo" className="font-semibold text-[hsl(var(--accent))] hover:underline">
+          <Link
+            href="/demo"
+            className="font-semibold text-[hsl(var(--accent))] hover:underline"
+          >
             Explore the demo
           </Link>
         </p>

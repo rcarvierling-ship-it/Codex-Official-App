@@ -25,8 +25,10 @@ let waitlistTableEnsured = false;
 async function ensureWaitlistTable() {
   if (waitlistTableEnsured) return;
   try {
-    try { await sql`create extension if not exists pgcrypto;`; } catch {}
-    
+    try {
+      await sql`create extension if not exists pgcrypto;`;
+    } catch {}
+
     await sql`
       create table if not exists public.waitlist (
         id           uuid primary key default gen_random_uuid(),
@@ -42,7 +44,7 @@ async function ensureWaitlistTable() {
         submitted_at timestamptz not null default now()
       );
     `;
-    
+
     try {
       await sql`create index if not exists idx_waitlist_submitted_at on public.waitlist (submitted_at desc);`;
     } catch {}
@@ -72,10 +74,11 @@ function isRateLimited(ip: string, now: number) {
 }
 
 export async function POST(request: Request) {
-  try {} catch {
+  try {
+  } catch {
     return NextResponse.json(
       { message: "Database setup error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -84,7 +87,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json(
       { message: "Invalid payload", errors: parsed.error.flatten() },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -99,11 +102,14 @@ export async function POST(request: Request) {
   if (isRateLimited(ip, now)) {
     return NextResponse.json(
       { message: "Too many submissions from this IP." },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
-  const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "theofficialapp-secret";
+  const secret =
+    process.env.NEXTAUTH_SECRET ??
+    process.env.AUTH_SECRET ??
+    "theofficialapp-secret";
   const ipHash = createHash("sha256").update(`${ip}:${secret}`).digest("hex");
   const userAgent = request.headers.get("user-agent") ?? "unknown";
 
@@ -122,14 +128,19 @@ export async function POST(request: Request) {
     `;
     const insertedId = (res as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
 
-      return NextResponse.json({ id: insertedId }, { status: 201 });
-
+    return NextResponse.json({ id: insertedId }, { status: 201 });
   } catch (err: any) {
     const errorMsg = String(err?.message ?? "");
     if (errorMsg.includes("duplicate key")) {
-      return NextResponse.json({ message: "Already on the waitlist." }, { status: 409 });
+      return NextResponse.json(
+        { message: "Already on the waitlist." },
+        { status: 409 },
+      );
     }
-    return NextResponse.json({ message: "Failed to save waitlist entry.", error: errorMsg }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to save waitlist entry.", error: errorMsg },
+      { status: 500 },
+    );
   }
 }
 

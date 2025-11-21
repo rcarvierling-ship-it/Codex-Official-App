@@ -151,13 +151,23 @@ export default async function HomePage() {
       <section className="relative overflow-hidden border-b border-border/50">
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--accent)/0.1)] via-transparent to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,_rgba(47,255,203,0.15),_transparent_50%)]" />
-        
+
         {/* Decorative Grid Pattern */}
         <div className="absolute inset-0 opacity-[0.03]">
           <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1"/>
+              <pattern
+                id="grid"
+                width="40"
+                height="40"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 40 0 L 0 0 0 40"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)" />
@@ -167,7 +177,11 @@ export default async function HomePage() {
         {/* Floating Geometric Shapes */}
         <div className="absolute top-20 right-10 w-32 h-32 opacity-10 hidden lg:block">
           <svg viewBox="0 0 100 100" className="w-full h-full">
-            <polygon points="50,5 90,50 50,95 10,50" fill="currentColor" className="text-[hsl(var(--accent))]">
+            <polygon
+              points="50,5 90,50 50,95 10,50"
+              fill="currentColor"
+              className="text-[hsl(var(--accent))]"
+            >
               <animateTransform
                 attributeName="transform"
                 type="rotate"
@@ -180,7 +194,15 @@ export default async function HomePage() {
         </div>
         <div className="absolute bottom-20 left-10 w-24 h-24 opacity-10 hidden lg:block">
           <svg viewBox="0 0 100 100" className="w-full h-full">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2" className="text-[hsl(var(--accent))]">
+            <circle
+              cx="50"
+              cy="50"
+              r="40"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-[hsl(var(--accent))]"
+            >
               <animateTransform
                 attributeName="transform"
                 type="rotate"
@@ -189,7 +211,13 @@ export default async function HomePage() {
                 repeatCount="indefinite"
               />
             </circle>
-            <circle cx="50" cy="50" r="25" fill="currentColor" className="text-[hsl(var(--accent))]" />
+            <circle
+              cx="50"
+              cy="50"
+              r="25"
+              fill="currentColor"
+              className="text-[hsl(var(--accent))]"
+            />
           </svg>
         </div>
 
@@ -266,7 +294,7 @@ export default async function HomePage() {
             {/* Right Column - Metrics Card */}
             <div className="relative mx-auto w-full max-w-md lg:max-w-lg">
               <div className="absolute inset-0 rounded-3xl bg-[radial-gradient(circle,_rgba(47,255,203,0.2),_transparent_70%)] blur-3xl" />
-              
+
               {/* Decorative Corner Graphics */}
               <div className="absolute -top-2 -right-2 w-16 h-16 opacity-20">
                 <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -277,7 +305,13 @@ export default async function HomePage() {
                     strokeWidth="3"
                     className="text-[hsl(var(--accent))]"
                   />
-                  <circle cx="90" cy="10" r="5" fill="currentColor" className="text-[hsl(var(--accent))]" />
+                  <circle
+                    cx="90"
+                    cy="10"
+                    r="5"
+                    fill="currentColor"
+                    className="text-[hsl(var(--accent))]"
+                  />
                 </svg>
               </div>
               <div className="absolute -bottom-2 -left-2 w-12 h-12 opacity-20">
@@ -336,7 +370,11 @@ export default async function HomePage() {
       <section className="relative border-y border-border/60 bg-background/40 overflow-hidden">
         {/* Decorative Wave Pattern */}
         <div className="absolute inset-0 opacity-5">
-          <svg viewBox="0 0 1200 120" className="w-full h-full" preserveAspectRatio="none">
+          <svg
+            viewBox="0 0 1200 120"
+            className="w-full h-full"
+            preserveAspectRatio="none"
+          >
             <path
               d="M 0,60 Q 150,20 300,60 T 600,60 T 900,60 T 1200,60 L 1200,120 L 0,120 Z"
               fill="currentColor"
@@ -369,8 +407,19 @@ export default async function HomePage() {
         <div className="absolute inset-0 opacity-[0.02]">
           <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
-                <circle cx="10" cy="10" r="1.5" fill="currentColor" className="text-foreground" />
+              <pattern
+                id="dots"
+                width="20"
+                height="20"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle
+                  cx="10"
+                  cy="10"
+                  r="1.5"
+                  fill="currentColor"
+                  className="text-foreground"
+                />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#dots)" />
@@ -380,14 +429,40 @@ export default async function HomePage() {
         {/* Decorative Elements */}
         <div className="absolute top-0 right-0 w-64 h-64 opacity-5 hidden lg:block">
           <svg viewBox="0 0 200 200" className="w-full h-full">
-            <polygon points="100,10 190,190 10,190" fill="currentColor" className="text-[hsl(var(--accent))]" />
-            <polygon points="100,30 170,170 30,170" fill="currentColor" className="text-[hsl(var(--accent))]" />
+            <polygon
+              points="100,10 190,190 10,190"
+              fill="currentColor"
+              className="text-[hsl(var(--accent))]"
+            />
+            <polygon
+              points="100,30 170,170 30,170"
+              fill="currentColor"
+              className="text-[hsl(var(--accent))]"
+            />
           </svg>
         </div>
         <div className="absolute bottom-0 left-0 w-48 h-48 opacity-5 hidden lg:block">
           <svg viewBox="0 0 200 200" className="w-full h-full">
-            <rect x="20" y="20" width="160" height="160" fill="none" stroke="currentColor" strokeWidth="2" className="text-[hsl(var(--accent))]" />
-            <rect x="40" y="40" width="120" height="120" fill="none" stroke="currentColor" strokeWidth="2" className="text-[hsl(var(--accent))]" />
+            <rect
+              x="20"
+              y="20"
+              width="160"
+              height="160"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-[hsl(var(--accent))]"
+            />
+            <rect
+              x="40"
+              y="40"
+              width="120"
+              height="120"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-[hsl(var(--accent))]"
+            />
           </svg>
         </div>
 
@@ -402,7 +477,9 @@ export default async function HomePage() {
                 </div>
               </div>
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Everything You Need</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
+              Everything You Need
+            </h2>
             <p className="text-sm sm:text-base text-muted-foreground">
               Powerful workflows designed to simplify sports league operations.
             </p>
@@ -416,8 +493,24 @@ export default async function HomePage() {
                 {/* Decorative Background Pattern */}
                 <div className="absolute top-0 right-0 w-32 h-32 opacity-5 group-hover:opacity-10 transition-opacity">
                   <svg viewBox="0 0 100 100" className="w-full h-full">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="1" className={feature.color} />
-                    <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" strokeWidth="1" className={feature.color} />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      className={feature.color}
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="25"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      className={feature.color}
+                    />
                   </svg>
                 </div>
 
@@ -448,7 +541,7 @@ export default async function HomePage() {
       <section className="relative border-y border-border bg-card/50 py-12 sm:py-16 md:py-20 overflow-hidden">
         {/* Connecting Lines Between Steps */}
         <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[hsl(var(--accent)/0.2)] to-transparent hidden md:block"></div>
-        
+
         {/* Decorative Circles */}
         <div className="absolute top-1/2 left-1/4 w-3 h-3 rounded-full bg-[hsl(var(--accent))] opacity-30 hidden md:block"></div>
         <div className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full bg-[hsl(var(--accent))] opacity-30 hidden md:block"></div>
@@ -458,8 +551,18 @@ export default async function HomePage() {
         <div className="absolute inset-0 opacity-[0.02]">
           <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="hexagons" width="50" height="43.4" patternUnits="userSpaceOnUse">
-                <polygon points="24.8,22 37.5,38.2 24.8,54.4 12.2,38.2" fill="none" stroke="currentColor" strokeWidth="1"/>
+              <pattern
+                id="hexagons"
+                width="50"
+                height="43.4"
+                patternUnits="userSpaceOnUse"
+              >
+                <polygon
+                  points="24.8,22 37.5,38.2 24.8,54.4 12.2,38.2"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#hexagons)" />
@@ -469,7 +572,9 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 relative z-10">
           <div className="flex flex-col gap-8 sm:gap-10">
             <div className="space-y-2 sm:space-y-3 text-center max-w-2xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">How it works</h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
+                How it works
+              </h2>
               <p className="text-sm sm:text-base text-muted-foreground">
                 Launch your league ops in three simple steps.
               </p>
@@ -505,7 +610,9 @@ export default async function HomePage() {
                           {index + 1}
                         </span>
                       </div>
-                      <div className={`text-[hsl(var(--accent))] flex-shrink-0 relative`}>
+                      <div
+                        className={`text-[hsl(var(--accent))] flex-shrink-0 relative`}
+                      >
                         <div className="absolute inset-0 bg-[hsl(var(--accent)/0.2)] blur-md rounded-full"></div>
                         <step.icon className="h-5 w-5 sm:h-6 sm:w-6 relative z-10" />
                       </div>
@@ -534,18 +641,44 @@ export default async function HomePage() {
           <svg viewBox="0 0 200 200" className="w-full h-full">
             <defs>
               <radialGradient id="grad1" cx="50%" cy="50%">
-                <stop offset="0%" stopColor="currentColor" className="text-[hsl(var(--accent))]" />
-                <stop offset="100%" stopColor="currentColor" stopOpacity="0" className="text-[hsl(var(--accent))]" />
+                <stop
+                  offset="0%"
+                  stopColor="currentColor"
+                  className="text-[hsl(var(--accent))]"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="currentColor"
+                  stopOpacity="0"
+                  className="text-[hsl(var(--accent))]"
+                />
               </radialGradient>
             </defs>
             <circle cx="100" cy="100" r="80" fill="url(#grad1)" />
-            <circle cx="100" cy="100" r="50" fill="none" stroke="currentColor" strokeWidth="2" className="text-[hsl(var(--accent))]" />
+            <circle
+              cx="100"
+              cy="100"
+              r="50"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-[hsl(var(--accent))]"
+            />
           </svg>
         </div>
         <div className="absolute bottom-0 left-0 w-64 h-64 opacity-5 hidden lg:block">
           <svg viewBox="0 0 200 200" className="w-full h-full">
-            <polygon points="100,20 180,180 20,180" fill="currentColor" className="text-[hsl(var(--accent))]" />
-            <polygon points="100,40 160,160 40,160" fill="currentColor" className="text-[hsl(var(--accent))]" opacity="0.5" />
+            <polygon
+              points="100,20 180,180 20,180"
+              fill="currentColor"
+              className="text-[hsl(var(--accent))]"
+            />
+            <polygon
+              points="100,40 160,160 40,160"
+              fill="currentColor"
+              className="text-[hsl(var(--accent))]"
+              opacity="0.5"
+            />
           </svg>
         </div>
 
@@ -553,8 +686,19 @@ export default async function HomePage() {
         <div className="absolute inset-0 opacity-[0.03]">
           <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="circles" width="60" height="60" patternUnits="userSpaceOnUse">
-                <circle cx="30" cy="30" r="2" fill="currentColor" className="text-[hsl(var(--accent))]" />
+              <pattern
+                id="circles"
+                width="60"
+                height="60"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle
+                  cx="30"
+                  cy="30"
+                  r="2"
+                  fill="currentColor"
+                  className="text-[hsl(var(--accent))]"
+                />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#circles)" />
@@ -566,7 +710,9 @@ export default async function HomePage() {
             <Badge className="border border-[hsl(var(--accent)/0.3)] bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] text-xs sm:text-sm px-3 py-1">
               Priority access
             </Badge>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Join the Waitlist</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
+              Join the Waitlist
+            </h2>
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
               Be among the first to experience modern league operations. We'll
               reach out with onboarding resources and invite codes.
@@ -578,7 +724,9 @@ export default async function HomePage() {
                   className="flex items-start gap-2 sm:gap-3 rounded-xl border border-border/60 bg-background/60 px-3 sm:px-4 py-2.5 sm:py-3"
                 >
                   <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-[hsl(var(--accent))] flex-shrink-0 mt-0.5" />
-                  <span className="text-sm sm:text-base text-muted-foreground">{bullet}</span>
+                  <span className="text-sm sm:text-base text-muted-foreground">
+                    {bullet}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -586,7 +734,12 @@ export default async function HomePage() {
               <p className="text-sm sm:text-base text-muted-foreground mb-3">
                 Already have access? Sign in to your account.
               </p>
-              <Button asChild variant="outline" size="sm" className="text-xs sm:text-sm">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="text-xs sm:text-sm"
+              >
                 <Link href="/login">Sign In</Link>
               </Button>
             </div>
@@ -622,8 +775,18 @@ export default async function HomePage() {
         <div className="absolute inset-0 opacity-[0.02]">
           <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="diagonal" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 0,40 L 40,0" stroke="currentColor" strokeWidth="1" className="text-foreground" />
+              <pattern
+                id="diagonal"
+                width="40"
+                height="40"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 0,40 L 40,0"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  className="text-foreground"
+                />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#diagonal)" />
@@ -632,9 +795,15 @@ export default async function HomePage() {
 
         <div className="space-y-6 sm:space-y-8 relative z-10">
           <div className="text-center">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Frequently Asked Questions</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
+              Frequently Asked Questions
+            </h2>
           </div>
-          <Accordion type="single" collapsible className="space-y-2 sm:space-y-3">
+          <Accordion
+            type="single"
+            collapsible
+            className="space-y-2 sm:space-y-3"
+          >
             {faq.map((item, index) => (
               <AccordionItem
                 key={item.question}
@@ -658,19 +827,26 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex flex-col items-center justify-between gap-4 sm:gap-6 md:flex-row">
             <p className="text-xs sm:text-sm text-muted-foreground text-center md:text-left">
-              © {new Date().getFullYear()} The Official App. All rights reserved.
+              © {new Date().getFullYear()} The Official App. All rights
+              reserved.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
               <Link href="/demo" className="transition hover:text-foreground">
                 Demo
               </Link>
-              <Link href="#waitlist" className="transition hover:text-foreground">
+              <Link
+                href="#waitlist"
+                className="transition hover:text-foreground"
+              >
                 Join Waitlist
               </Link>
               <Link href="/login" className="transition hover:text-foreground">
                 Sign In
               </Link>
-              <Link href="/privacy" className="transition hover:text-foreground">
+              <Link
+                href="/privacy"
+                className="transition hover:text-foreground"
+              >
                 Privacy
               </Link>
               <Link href="/terms" className="transition hover:text-foreground">
