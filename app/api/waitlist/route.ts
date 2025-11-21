@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     `;
     const insertedId = (res as { rows?: WaitlistRow[] }).rows?.[0]?.id ?? null;
 
-    return NextResponse.json({ id: insertedId }, { status: 201 });
+      return NextResponse.json({ id: insertedId }, { status: 201 });
 
   } catch (err: any) {
     const errorMsg = String(err?.message ?? "");
