@@ -2,12 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
+  AlarmClockCheck,
+  BarChart3,
   CalendarClock,
+  CheckCircle2,
   ClipboardList,
+  Compass,
   MessageSquare,
   ShieldCheck,
   Users2,
-  Wrench,
 } from "lucide-react";
 
 import {
@@ -23,80 +26,101 @@ import { WaitlistForm } from "@/components/waitlist/WaitlistForm";
 import { getSessionServer } from "@/lib/auth";
 
 const heroMetrics = [
-  { label: "Events Today", value: "12", delta: "+5%" },
-  { label: "Pending Requests", value: "18", delta: "-3%" },
-  { label: "Active Officials", value: "76", delta: "+12%" },
+  { label: "Requests filled", value: "94%", delta: "+12%" },
+  { label: "Crew confirmations", value: "<10m", delta: "faster" },
+  { label: "Schools live", value: "180+", delta: "growing" },
 ];
 
 const featureCards = [
   {
-    title: "Real-time Event Management",
+    title: "Live scheduling",
     description:
-      "Create, reschedule, and broadcast updates across teams with ease.",
+      "Publish calendars, update venues, and communicate changes instantly.",
     icon: CalendarClock,
   },
   {
-    title: "Role-Based Access",
+    title: "Protected access",
     description:
-      "Give ADs, coaches, and officials the tools they need with guardrails.",
+      "Guardrails for assignors, ADs, coaches, and officials with clear roles.",
     icon: ShieldCheck,
   },
   {
-    title: "Instant Assignments",
+    title: "Smart assignments",
     description:
-      "Match officials based on availability, certifications, and distance.",
+      "Pair crews using certifications, distance, and prior conflicts automatically.",
     icon: ClipboardList,
   },
   {
-    title: "Built-in Communication",
+    title: "Signals & alerts",
     description:
-      "Send announcements, confirmations, and alerts from one command center.",
+      "Centralized messaging to keep teams aligned when the schedule shifts.",
     icon: MessageSquare,
   },
   {
-    title: "Team Coordination",
+    title: "Unified rosters",
     description:
-      "Manage rosters, staff, and logistics across multiple schools or leagues.",
+      "Manage multi-school programs, staff, and eligibility from one system.",
     icon: Users2,
   },
   {
-    title: "Developer Tools",
+    title: "Operational telemetry",
     description:
-      "APIs, webhooks, and sandbox data to connect scheduling with operations.",
-    icon: Wrench,
+      "Dashboards for fill rates, travel, and reliability across your network.",
+    icon: BarChart3,
   },
 ];
 
 const partnerLogos = [
-  "Summit Athletic Association",
-  "Metro Prep Network",
-  "Coastal Officials Union",
+  "National Prep Network",
+  "Summit Athletics",
+  "Pacific Officials Guild",
   "Varsity Schedules",
-  "North Ridge Schools",
+  "Metro Charter League",
+];
+
+const operationalPillars = [
+  {
+    title: "Game day clarity",
+    description:
+      "One source of truth for kickoff, crew arrival, travel logistics, and venue readiness.",
+    icon: AlarmClockCheck,
+  },
+  {
+    title: "Admin precision",
+    description:
+      "Approval flows, audit trails, and controls that keep everyone compliant and accountable.",
+    icon: CheckCircle2,
+  },
+  {
+    title: "Expansion ready",
+    description:
+      "Blueprints for adding new sports, seasons, and regions without rebuilding playbooks.",
+    icon: Compass,
+  },
 ];
 
 const howItWorks = [
   {
-    title: "Create leagues & schools",
+    title: "Launch your environment",
     description:
-      "Set up programs, import rosters, and define who can approve events.",
+      "Import schedules, map facilities, and connect the teams responsible for approvals.",
   },
   {
-    title: "Schedule events & invite officials",
+    title: "Automate crew selection",
     description:
-      "Build calendars, request crews, and share live updates instantly.",
+      "Request officials by certification, availability, and distance to get faster confirmations.",
   },
   {
-    title: "Approve requests & track assignments",
+    title: "Monitor & adapt",
     description:
-      "Review availability, confirm assignments, and monitor status in real time.",
+      "Track fill rates, substitutions, and last-minute changes with alerts routed to the right people.",
   },
 ];
 
 const waitlistBullets = [
-  "Priority onboarding and migration support",
-  "Early access to new workflows and integrations",
-  "Direct line to product + success teams for admins",
+  "White-glove onboarding and migration support",
+  "Early access to new assignments and finance workflows",
+  "Direct line to our product and success teams for admins",
 ];
 
 const faq = [
@@ -133,27 +157,27 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="space-y-24 pb-32">
-      <section className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(47,255,203,0.18),_transparent_60%)]" />
-        <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-20 md:grid-cols-[1.1fr,0.9fr] md:items-center">
-          <div className="space-y-6">
-            <Badge className="w-fit border border-[hsl(var(--accent)/0.3)] bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))]">
-              All-in-one sports ops
+    <main className="space-y-24 pb-32">
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-[hsl(var(--accent)/0.12)] via-background to-background">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(47,255,203,0.18),transparent_35%),_radial-gradient(circle_at_80%_0%,rgba(47,255,203,0.08),transparent_30%)]" />
+        <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 pb-16 pt-20 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
+          <div className="space-y-7">
+            <Badge className="w-fit border border-[hsl(var(--accent)/0.3)] bg-[hsl(var(--accent)/0.08)] text-[hsl(var(--accent))]">
+              Orchestrate game day with certainty
             </Badge>
-            <h1 className="text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
-              The Official App — League &amp; Event Management
-            </h1>
-            <p className="max-w-2xl text-lg text-muted-foreground">
-              Power athletic departments with real-time scheduling, approvals,
-              officials workflows, and communication tools built for schools,
-              leagues, and assignors.
-            </p>
+            <div className="space-y-4">
+              <h1 className="text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
+                The command center for athletic departments &amp; officials
+              </h1>
+              <p className="max-w-3xl text-lg text-muted-foreground">
+                Coordinate schedules, crews, and communication from one platform. Automate the back-and-forth so every event stays on time, staffed, and in compliance.
+              </p>
+            </div>
             <div className="flex flex-col gap-4 sm:flex-row">
               <Button
                 asChild
                 size="lg"
-                className="bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent)/0.9)]"
+                className="bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] shadow-lg shadow-[hsl(var(--accent)/0.3)] hover:bg-[hsl(var(--accent)/0.9)]"
               >
                 <Link href="/demo">View Live Demo</Link>
               </Button>
@@ -161,7 +185,7 @@ export default async function HomePage() {
                 asChild
                 variant="outline"
                 size="lg"
-                className="border border-[hsl(var(--accent)/0.4)] bg-transparent text-foreground hover:border-[hsl(var(--accent)/0.6)] hover:text-[hsl(var(--accent))]"
+                className="border border-[hsl(var(--accent)/0.4)] bg-background/70 text-foreground hover:border-[hsl(var(--accent)/0.6)] hover:text-[hsl(var(--accent))]"
               >
                 <Link href="#waitlist">Join Waitlist</Link>
               </Button>
@@ -169,67 +193,69 @@ export default async function HomePage() {
                 asChild
                 size="lg"
                 variant="ghost"
-                className="border border-[hsl(var(--accent)/0.4)] bg-transparent text-foreground hover:border-[hsl(var(--accent)/0.6)] hover:text-[hsl(var(--accent))]"
+                className="border border-border/60 bg-transparent text-foreground hover:border-[hsl(var(--accent)/0.5)] hover:text-[hsl(var(--accent))]"
               >
                 <Link href="/login">Sign In</Link>
               </Button>
             </div>
-            <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
-              Fast • Secure • Built for schools &amp; leagues
-            </p>
+            <div className="grid gap-4 rounded-3xl border border-border/60 bg-card/60 p-5 shadow-xl md:grid-cols-3">
+              {heroMetrics.map((metric) => (
+                <div key={metric.label} className="space-y-1 rounded-2xl border border-border/60 bg-background/60 px-4 py-3">
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{metric.label}</p>
+                  <p className="text-2xl font-semibold text-foreground">{metric.value}</p>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[hsl(var(--accent))]">{metric.delta}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-md">
-            <div className="absolute inset-0 rounded-3xl bg-[radial-gradient(circle,_rgba(47,255,203,0.18),_transparent_70%)] blur-3xl" />
-            <div className="relative flex flex-col gap-5 rounded-3xl border border-[hsl(var(--accent)/0.3)] bg-card/80 p-6 shadow-2xl backdrop-blur">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                    Interactive demo
-                  </p>
-                  <p className="text-lg font-semibold text-foreground">
-                    Game Day Command
-                  </p>
+          <div className="relative">
+            <div className="absolute -inset-6 rounded-[32px] bg-[radial-gradient(circle,_rgba(47,255,203,0.18),_transparent_65%)] blur-3xl" />
+            <Card className="relative overflow-hidden border border-[hsl(var(--accent)/0.35)] bg-card/80 shadow-2xl backdrop-blur">
+              <CardHeader className="flex flex-col gap-3 border-b border-border/60 pb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Live Ops Snapshot</p>
+                    <p className="text-lg font-semibold text-foreground">Cross-school assignments</p>
+                  </div>
+                  <Badge className="rounded-full bg-[hsl(var(--accent)/0.2)] text-[hsl(var(--accent))]">Live</Badge>
                 </div>
-                <div className="rounded-full border border-[hsl(var(--accent)/0.3)] bg-[hsl(var(--accent)/0.15)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[hsl(var(--accent))]">
-                  Live
-                </div>
-              </div>
-              <div className="grid gap-3">
-                {heroMetrics.map((metric) => (
+                <p className="text-sm text-muted-foreground">
+                  Crew movement, travel windows, and approvals update in real time as your teams collaborate.
+                </p>
+              </CardHeader>
+              <CardContent className="grid gap-4 p-6">
+                {featureCards.slice(0, 3).map((item) => (
                   <div
-                    key={metric.label}
-                    className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/60 px-4 py-3 text-sm"
+                    key={item.title}
+                    className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/60 p-4"
                   >
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                        {metric.label}
-                      </p>
-                      <p className="text-lg font-semibold text-foreground">
-                        {metric.value}
-                      </p>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--accent)/0.18)] text-[hsl(var(--accent))]">
+                      <item.icon className="h-5 w-5" />
                     </div>
-                    <span className="rounded-full bg-[hsl(var(--accent)/0.15)] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[hsl(var(--accent))]">
-                      {metric.delta}
-                    </span>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.description}</p>
+                    </div>
                   </div>
                 ))}
-              </div>
-            </div>
+                <div className="rounded-2xl border border-dashed border-[hsl(var(--accent)/0.4)] bg-[hsl(var(--accent)/0.06)] p-4 text-sm text-[hsl(var(--accent-foreground))]">
+                  Dispatch your next event with rules for travel, certification, and availability baked in.
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-border/60 bg-background/60">
+      <section className="border-y border-border/60 bg-background/70">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-10 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Trusted by modern programs
-          </p>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Trusted by modern programs</p>
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground md:gap-10">
             {partnerLogos.map((name) => (
               <span
                 key={name}
-                className="rounded-full border border-border/60 bg-card/70 px-4 py-2 text-[13px] tracking-wide text-muted-foreground"
+                className="rounded-full border border-border/60 bg-card/80 px-4 py-2 text-[13px] tracking-wide text-muted-foreground"
               >
                 {name}
               </span>
@@ -240,25 +266,23 @@ export default async function HomePage() {
 
       <section className="mx-auto max-w-6xl space-y-10 px-6">
         <div className="space-y-3 text-center">
-          <h2 className="text-3xl font-semibold">Everything You Need</h2>
+          <h2 className="text-3xl font-semibold">Precision for every role</h2>
           <p className="text-sm text-muted-foreground">
-            Powerful workflows designed to simplify sports league operations.
+            From assignors to ADs to officials, everyone gets a clear lane, approvals, and communication in one system.
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {featureCards.map((feature) => (
             <Card
               key={feature.title}
-              className="border-border/80 bg-card/80 transition hover:border-[hsl(var(--accent)/0.4)] hover:bg-card/90"
+              className="border-border/80 bg-card/80 transition hover:-translate-y-1 hover:border-[hsl(var(--accent)/0.45)] hover:shadow-lg"
             >
               <CardHeader className="flex flex-row items-center gap-3">
                 <feature.icon className="h-5 w-5 text-[hsl(var(--accent))]" />
                 <CardTitle className="text-lg">{feature.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {feature.description}
-                </p>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
               </CardContent>
             </Card>
           ))}
@@ -268,27 +292,20 @@ export default async function HomePage() {
       <section className="border-y border-border bg-card/70 py-20">
         <div className="mx-auto flex max-w-5xl flex-col gap-10 px-6">
           <div className="space-y-2 text-center">
-            <h2 className="text-3xl font-semibold">How it works</h2>
+            <h2 className="text-3xl font-semibold">Built for operational calm</h2>
             <p className="text-sm text-muted-foreground">
-              Launch your league ops in three simple steps.
+              Frameworks that absorb last-minute changes without disrupting your teams.
             </p>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
-            {howItWorks.map((step, index) => (
-              <Card
-                key={step.title}
-                className="border-border/70 bg-background/70 shadow-sm"
-              >
+            {operationalPillars.map((pillar) => (
+              <Card key={pillar.title} className="border-border/70 bg-background/70 shadow-sm">
                 <CardContent className="flex flex-col gap-3 p-6">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--accent)/0.2)] text-sm font-semibold text-[hsl(var(--accent))]">
-                    {index + 1}
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--accent)/0.2)] text-sm text-[hsl(var(--accent))]">
+                    <pillar.icon className="h-5 w-5" />
                   </span>
-                  <h3 className="text-lg font-semibold text-foreground">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {step.description}
-                  </p>
+                  <h3 className="text-lg font-semibold text-foreground">{pillar.title}</h3>
+                  <p className="text-sm text-muted-foreground">{pillar.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -296,18 +313,37 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl space-y-10 px-6">
+        <div className="space-y-3 text-center">
+          <h2 className="text-3xl font-semibold">Launch in three steps</h2>
+          <p className="text-sm text-muted-foreground">Go live quickly, with controls for every stakeholder.</p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
+          {howItWorks.map((step, index) => (
+            <Card key={step.title} className="border-border/70 bg-card/70 shadow-sm">
+              <CardContent className="flex flex-col gap-3 p-6">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--accent)/0.2)] text-sm font-semibold text-[hsl(var(--accent))]">
+                  {index + 1}
+                </span>
+                <h3 className="text-lg font-semibold text-foreground">{step.title}</h3>
+                <p className="text-sm text-muted-foreground">{step.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
       <section
         id="waitlist"
         className="mx-auto flex max-w-6xl flex-col gap-12 px-6 md:flex-row md:items-start"
       >
-        <div className="md:w-1/2 space-y-4">
+        <div className="space-y-4 md:w-1/2">
           <Badge className="border border-[hsl(var(--accent)/0.3)] bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))]">
             Priority access
           </Badge>
           <h2 className="text-3xl font-semibold">Join the Waitlist</h2>
           <p className="text-base text-muted-foreground">
-            Be among the first to experience modern league operations. We'll
-            reach out with onboarding resources and invite codes.
+            Be among the first to experience modern league operations. We'll reach out with onboarding resources and invite codes.
           </p>
           <ul className="space-y-3 text-sm text-muted-foreground">
             {waitlistBullets.map((bullet) => (
@@ -321,9 +357,7 @@ export default async function HomePage() {
             ))}
           </ul>
           <div className="pt-4">
-            <p className="text-sm text-muted-foreground mb-3">
-              Already have access? Sign in to your account.
-            </p>
+            <p className="mb-3 text-sm text-muted-foreground">Already have access? Sign in to your account.</p>
             <Button asChild variant="outline" size="sm">
               <Link href="/login">Sign In</Link>
             </Button>
@@ -380,6 +414,6 @@ export default async function HomePage() {
           </div>
         </div>
       </footer>
-    </div>
+    </main>
   );
 }
