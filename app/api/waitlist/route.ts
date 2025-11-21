@@ -5,9 +5,10 @@ import { createHash, randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
-import { Resend } from 'resend';
+import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // Types for returned rows
 type WaitlistRow = { id: string };
@@ -127,20 +128,24 @@ export async function POST(request: Request) {
 
     // ✅ SEND EMAIL HERE (after success)
     try {
-      await resend.emails.send({
-        from: "The Official App <no-reply@the-official-app.com>",
-        to: email,
-        subject: "You're on the waitlist ✅",
-        html: `
-        <div style="font-family: Arial; font-size: 16px;">
-          <p>Hey ${name},</p>
-          <p>Thanks for joining the waitlist for <b>The Official App</b> 🎉</p>
-          <p>We’ll notify you when access opens.</p>
-          <br/>
-          <p>– Reese & The Official App Team</p>
-        </div>
-        `,
-      });
+      if (!resend) {
+        console.warn("[waitlist email] RESEND_API_KEY not set; skipping email send.");
+      } else {
+        await resend.emails.send({
+          from: "The Official App <no-reply@the-official-app.com>",
+          to: email,
+          subject: "You're on the waitlist ✅",
+          html: `
+          <div style="font-family: Arial; font-size: 16px;">
+            <p>Hey ${name},</p>
+            <p>Thanks for joining the waitlist for <b>The Official App</b> 🎉</p>
+            <p>We’ll notify you when access opens.</p>
+            <br/>
+            <p>– Reese & The Official App Team</p>
+          </div>
+          `,
+        });
+      }
     } catch (err) {
       console.error("[waitlist email] failed:", err);
     }
