@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionServer } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { normalizeRole, type Role, KNOWN_ROLES } from "@/lib/nav";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,18 +18,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Role is required." }, { status: 400 });
     }
 
-    const validRoles = ["USER", "COACH", "OFFICIAL", "AD", "ADMIN", "SUPER_ADMIN"];
-    if (!validRoles.includes(role)) {
-      return NextResponse.json({ message: "Invalid role." }, { status: 400 });
+    // Normalize the role to canonical form
+    const normalizedRole = normalizeRole(role);
+    
+    // Validate that the normalized role is a known canonical role
+    if (!KNOWN_ROLES.includes(normalizedRole)) {
+      return NextResponse.json({ 
+        message: `Invalid role. Must be one of: ${KNOWN_ROLES.join(", ")}` 
+      }, { status: 400 });
     }
 
     const email = session.user.email;
     
-    // Update user role in database
+    // Update user role in database with normalized role
     try {
       await sql`
         update users 
-        set role = ${role} 
+        set role = ${normalizedRole} 
         where email = ${email}
       `;
     } catch (error) {
@@ -39,7 +45,7 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true, role });
+    return NextResponse.json({ ok: true, role: normalizedRole });
   } catch (error) {
     console.error("[api/user/update-role] failed", error);
     return NextResponse.json(

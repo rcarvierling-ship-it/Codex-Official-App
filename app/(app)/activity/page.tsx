@@ -92,9 +92,11 @@ async function getActivityLogs(
   }
 }
 
+import type { SessionUser } from "@/lib/types/auth";
+
 export default async function ActivityPage() {
   const { session } = await requireRole("league_admin");
-  const user = session.user as any;
+  const user = session.user as SessionUser;
   const canSeeAll = user?.canSeeAll ?? false;
   const accessibleSchools = user?.accessibleSchools ?? [];
   const accessibleLeagues = user?.accessibleLeagues ?? [];

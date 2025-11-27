@@ -12,6 +12,7 @@ import { ScoreVerificationCard } from "@/components/score-reporting/ScoreVerific
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { normalizeRole } from "@/lib/nav";
 
 type Event = {
   id: string;
@@ -109,9 +110,11 @@ export function EventDetailClient({
   const [refreshKey, setRefreshKey] = useState(0);
   const router = useRouter();
 
-  const isCoach = currentUserRole === "COACH";
-  const isOfficial = currentUserRole === "OFFICIAL";
-  const isAdmin = currentUserRole === "ADMIN" || currentUserRole === "SUPER_ADMIN";
+  // Normalize role to canonical form for consistent checks
+  const normalizedRole = normalizeRole(currentUserRole);
+  const isCoach = normalizedRole === "coach";
+  const isOfficial = normalizedRole === "official";
+  const isAdmin = normalizedRole === "league_admin" || normalizedRole === "school_admin";
   const myChangeRequests = changeRequests.filter((cr) => cr.requester?.email === userMap.get(currentUserId)?.email);
 
   const handleScoreUpdate = () => {

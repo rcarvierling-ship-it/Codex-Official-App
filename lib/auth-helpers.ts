@@ -3,6 +3,7 @@ import { getSessionServer } from "./auth";
 import { normalizeRole, type Role } from "@/lib/nav";
 import { roleAllows } from "@/lib/acl";
 import { getUserSchool, getUserAccessibleSchoolsAndLeagues } from "@/lib/repos/schools";
+import type { SessionUser } from "@/lib/types/auth";
 
 type RequireAuthOptions = {
   requireSchool?: boolean;
@@ -20,11 +21,12 @@ warnMissingSecret();
 
 async function attachSchool(session: any, requireSchool: boolean) {
   if (!session?.user) return null;
-  const email = (session.user as any)?.email;
+  const user = session.user as SessionUser;
+  const email = user?.email;
   if (!email) return null;
 
-  const userId = (session.user as any)?.id;
-  const role = (session.user as any)?.role;
+  const userId = user?.id;
+  const role = user?.role;
 
   // Try to get active context from user_school_roles first
   let activeContext = null;
@@ -43,14 +45,14 @@ async function attachSchool(session: any, requireSchool: boolean) {
     const accessible = await getUserAccessibleSchoolsAndLeagues(email, role);
 
     if (membership?.schoolId) {
-      (session.user as any).schoolId = membership.schoolId;
-      (session.user as any).school = membership.school ?? null;
+      user.schoolId = membership.schoolId;
+      user.school = membership.school ?? null;
     }
 
     // Attach accessible schools and leagues for filtering
-    (session.user as any).accessibleSchools = accessible?.schoolIds ?? [];
-    (session.user as any).accessibleLeagues = accessible?.leagueIds ?? [];
-    (session.user as any).canSeeAll = accessible === null; // null means league_admin
+    user.accessibleSchools = accessible?.schoolIds ?? [];
+    user.accessibleLeagues = accessible?.leagueIds ?? [];
+    user.canSeeAll = accessible === null; // null means league_admin
     
     // Refresh role from database to ensure it's up to date
     if (userId) {
@@ -60,7 +62,7 @@ async function attachSchool(session: any, requireSchool: boolean) {
           SELECT role FROM users WHERE id = ${userId} LIMIT 1
         `;
         if (rows.length > 0 && rows[0].role) {
-          (session.user as any).role = normalizeRole(rows[0].role);
+          user.role = normalizeRole(rows[0].role);
         }
       } catch (error) {
         console.warn("[auth-helpers] Failed to refresh role from database", error);
@@ -70,8 +72,8 @@ async function attachSchool(session: any, requireSchool: boolean) {
     // Check if user has completed onboarding
     if (requireSchool && !membership?.schoolId && accessible?.schoolIds.length === 0) {
       // Check onboarding_completed field first
-      const userId = (session.user as any)?.id;
-      const email = (session.user as any)?.email;
+      const userId = user?.id;
+      const email = user?.email;
       const { hasCompletedOnboarding } = await import("@/lib/onboarding-helpers");
       const completed = await hasCompletedOnboarding(userId, email);
       
@@ -85,29 +87,30 @@ async function attachSchool(session: any, requireSchool: boolean) {
   }
 
   // Use active context - this is the source of truth for role
+  // user is already declared at the top of the function
   if (activeContext.schoolId) {
-    (session.user as any).schoolId = activeContext.schoolId;
-    (session.user as any).school = activeContext.school ?? null;
+    user.schoolId = activeContext.schoolId;
+    user.school = activeContext.school ?? null;
   }
   if (activeContext.leagueId) {
-    (session.user as any).leagueId = activeContext.leagueId;
-    (session.user as any).league = activeContext.league ?? null;
+    user.leagueId = activeContext.leagueId;
+    user.league = activeContext.league ?? null;
   }
   // Update session role from active context (most accurate)
-  (session.user as any).role = normalizeRole(activeContext.role);
-  (session.user as any).activeContextId = activeContext.id;
+  user.role = normalizeRole(activeContext.role);
+  user.activeContextId = activeContext.id;
 
   // Get accessible schools/leagues based on all contexts
   const accessible = await getUserAccessibleSchoolsAndLeagues(email, activeContext.role);
-  (session.user as any).accessibleSchools = accessible?.schoolIds ?? [];
-  (session.user as any).accessibleLeagues = accessible?.leagueIds ?? [];
-  (session.user as any).canSeeAll = accessible === null;
+  user.accessibleSchools = accessible?.schoolIds ?? [];
+  user.accessibleLeagues = accessible?.leagueIds ?? [];
+  user.canSeeAll = accessible === null;
 
   // Check if user has completed onboarding
   if (requireSchool && !activeContext.schoolId && !activeContext.leagueId && accessible?.schoolIds.length === 0) {
     // Check onboarding_completed field first
-    const userId = (session.user as any)?.id;
-    const email = (session.user as any)?.email;
+    const userId = user?.id;
+    const email = user?.email;
     const { hasCompletedOnboarding } = await import("@/lib/onboarding-helpers");
     const completed = await hasCompletedOnboarding(userId, email);
     
@@ -125,16 +128,25 @@ async function attachSchool(session: any, requireSchool: boolean) {
 
 /**
  * Get the current user's role from NextAuth session
+ * 
+ * This function tries multiple sources in order of accuracy:
+ * 1. Active user context (most accurate, reflects current school/league context)
+ * 2. Database (reflects user's base role)
+ * 3. Session (may be stale after role changes)
+ * 
+ * @returns The normalized role, defaults to "fan" if unable to determine
  */
 export async function getAuthRole(): Promise<Role> {
   try {
     const session = await getSessionServer();
     if (!session?.user) {
+      console.warn("[auth-helpers] getAuthRole: No session or user, defaulting to 'fan'");
       return normalizeRole("fan");
     }
     
-    const userId = (session.user as any)?.id;
-    const sessionRole = (session.user as any)?.role;
+    const user = session.user as SessionUser;
+    const userId = user?.id;
+    const sessionRole = user?.role;
     
     // Try to get role from active context first (most accurate)
     if (userId) {
@@ -142,10 +154,14 @@ export async function getAuthRole(): Promise<Role> {
         const { getActiveUserContext } = await import("@/lib/repos/user-contexts");
         const activeContext = await getActiveUserContext(userId);
         if (activeContext?.role) {
-          return normalizeRole(activeContext.role);
+          const normalized = normalizeRole(activeContext.role);
+          if (normalized !== sessionRole) {
+            console.debug(`[auth-helpers] getAuthRole: Role mismatch - context: ${normalized}, session: ${sessionRole}`);
+          }
+          return normalized;
         }
       } catch (error) {
-        console.warn("[auth-helpers] Failed to get role from context", error);
+        console.warn("[auth-helpers] getAuthRole: Failed to get role from context, trying database", error);
       }
       
       // Fallback: fetch role directly from database
@@ -155,21 +171,31 @@ export async function getAuthRole(): Promise<Role> {
           SELECT role FROM users WHERE id = ${userId} LIMIT 1
         `;
         if (rows.length > 0 && rows[0].role) {
-          return normalizeRole(rows[0].role);
+          const normalized = normalizeRole(rows[0].role);
+          if (normalized !== sessionRole) {
+            console.debug(`[auth-helpers] getAuthRole: Role mismatch - database: ${normalized}, session: ${sessionRole}`);
+          }
+          return normalized;
         }
       } catch (error) {
-        console.warn("[auth-helpers] Failed to get role from database", error);
+        console.warn("[auth-helpers] getAuthRole: Failed to get role from database, using session role", error);
       }
     }
     
     // Final fallback: use session role
-    return normalizeRole(sessionRole ?? "fan");
+    const normalized = normalizeRole(sessionRole ?? "fan");
+    if (!sessionRole) {
+      console.warn("[auth-helpers] getAuthRole: No role in session, defaulting to 'fan'");
+    }
+    return normalized;
   } catch (error) {
     if (!process.env.NEXTAUTH_SECRET) {
-      console.warn("[auth-helpers] getAuthRole failed - missing NEXTAUTH_SECRET");
+      console.warn("[auth-helpers] getAuthRole failed - missing NEXTAUTH_SECRET, defaulting to 'fan'");
       return normalizeRole("fan");
     }
-    throw error;
+    console.error("[auth-helpers] getAuthRole: Unexpected error", error);
+    // Don't throw - return default role to prevent breaking the app
+    return normalizeRole("fan");
   }
 }
 
@@ -181,41 +207,85 @@ export async function requireAuth(options: RequireAuthOptions = {}) {
   try {
     const session = await getSessionServer();
     if (!session) {
-      redirect("/(auth)/login");
+      console.warn("[auth-helpers] requireAuth: No session found, redirecting to login");
+      redirect("/login");
     }
 
-    await attachSchool(session, requireSchool);
+    if (!session.user) {
+      console.warn("[auth-helpers] requireAuth: Session exists but no user, redirecting to login");
+      redirect("/login");
+    }
+
+    try {
+      await attachSchool(session, requireSchool);
+    } catch (attachError) {
+      // If attachSchool fails due to onboarding redirect, let it redirect
+      if (attachError && typeof attachError === "object" && "digest" in attachError) {
+        throw attachError;
+      }
+      console.error("[auth-helpers] requireAuth: Failed to attach school context", attachError);
+      // Continue anyway - some pages don't require school context
+    }
+
     return session;
   } catch (error) {
+    // If it's a redirect, let it through
+    if (error && typeof error === "object" && "digest" in error) {
+      throw error;
+    }
+    
     if (!process.env.NEXTAUTH_SECRET) {
       console.warn("[auth-helpers] requireAuth failed - missing NEXTAUTH_SECRET, redirecting to login");
-      redirect("/(auth)/login");
+      redirect("/login");
     }
-    throw error;
+    
+    console.error("[auth-helpers] requireAuth: Unexpected error", error);
+    redirect("/login");
   }
 }
 
 /**
  * Require a specific role or higher
+ * 
+ * @param minRole The minimum role required to access
+ * @param options Optional configuration for authentication requirements
+ * @returns Session, role, and school information
+ * @throws Redirects to home page if user doesn't have required role
  */
 export async function requireRole(minRole: Role, options?: RequireAuthOptions) {
-  const session = await requireAuth(options);
-  const role = await getAuthRole(); // Use getAuthRole to get the most accurate role
+  try {
+    const session = await requireAuth(options);
+    const role = await getAuthRole(); // Use getAuthRole to get the most accurate role
 
-  const roleHierarchy: Record<Role, number> = {
-    league_admin: 6,
-    school_admin: 5,
-    athletic_director: 4,
-    coach: 3,
-    official: 2,
-    fan: 1,
-  };
+    const roleHierarchy: Record<Role, number> = {
+      league_admin: 6,
+      school_admin: 5,
+      athletic_director: 4,
+      coach: 3,
+      official: 2,
+      fan: 1,
+    };
 
-  if (roleHierarchy[role] < roleHierarchy[minRole]) {
+    const userRoleLevel = roleHierarchy[role] ?? 0;
+    const requiredLevel = roleHierarchy[minRole] ?? 0;
+
+    if (userRoleLevel < requiredLevel) {
+      console.warn(
+        `[auth-helpers] requireRole: Access denied - user role '${role}' (level ${userRoleLevel}) does not meet required '${minRole}' (level ${requiredLevel})`
+      );
+      redirect("/");
+    }
+
+    const user = session.user as SessionUser;
+    return { session, role, school: user?.school ?? null };
+  } catch (error) {
+    // If it's a redirect, let it through
+    if (error && typeof error === "object" && "digest" in error) {
+      throw error;
+    }
+    console.error("[auth-helpers] requireRole: Unexpected error", error);
     redirect("/");
   }
-
-  return { session, role, school: (session.user as any)?.school ?? null };
 }
 
 /**
@@ -223,7 +293,8 @@ export async function requireRole(minRole: Role, options?: RequireAuthOptions) {
  */
 export async function requireOwner() {
   const session = await requireAuth({ requireSchool: false });
-  const email = (session.user as any)?.email;
+  const user = session.user as SessionUser;
+  const email = user?.email;
   
   const ownerEmail = process.env.OWNER_EMAIL?.toLowerCase().trim();
   if (!ownerEmail) {

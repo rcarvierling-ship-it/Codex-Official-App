@@ -56,7 +56,7 @@ When people visit the website, they see:
 These pages show role-specific dashboards with real database data.
 
 ### Option 3: Admin Dashboard (`/admin`)
-- Requires SUPER_ADMIN or ADMIN role (checked via `getServerRole()`)
+- Requires `league_admin` role (checked via `requireRole()`)
 - Shows waitlist entries from database
 - Displays metrics (events count, users count, etc.)
 - Uses real database queries
@@ -109,14 +109,40 @@ To use real data, you need:
 
 ---
 
-## Authentication (Future)
+## Authentication & Role-Based Access
 
-Currently, most real app pages don't require authentication. In production, you'll likely want to:
+The app uses NextAuth.js for authentication with role-based access control:
 
-1. Add NextAuth.js or similar
-2. Protect routes like `/admin`, `/events`, `/profile`
-3. Redirect unauthenticated users to `/signup` or `/login`
-4. Use `getServerRole()` to check permissions
+### User Roles (Canonical Names)
+- `league_admin` - League Administrator (highest level, can see all schools/leagues)
+- `school_admin` - School Administrator
+- `athletic_director` - Athletic Director
+- `coach` - Coach
+- `official` - Official/Referee
+- `fan` - Fan/Parent (default role for new signups)
+
+### Role-Based Dashboards
+Each role has a dedicated dashboard:
+- `/dashboard/league` - League Admin Dashboard
+- `/dashboard/school` - School Admin & Athletic Director Dashboard
+- `/dashboard/coach` - Coach Dashboard
+- `/dashboard/official` - Official Dashboard
+- `/dashboard/fan` - Fan Dashboard
+
+### Authentication Flow
+1. New users sign up → Default role: `fan`
+2. Users complete onboarding → Select school and role
+3. Users are redirected to their role-specific dashboard
+4. Middleware protects routes based on authentication
+5. Pages use `requireAuth()`, `requireRole()`, or `getAuthRole()` for access control
+
+### Legacy Role Support
+The app includes `normalizeRole()` function that maps legacy role names to canonical ones:
+- `SUPER_ADMIN`, `ADMIN` → `league_admin`
+- `AD`, `athletic_director` → `athletic_director`
+- `USER`, `PARENT`, `STAFF` → `fan`
+- `COACH` → `coach`
+- `OFFICIAL` → `official`
 
 ---
 
@@ -151,24 +177,29 @@ Currently, most real app pages don't require authentication. In production, you'
 
 ---
 
+## Role-Based Navigation
+
+The app includes a `Sidebar` component that displays navigation items based on the user's role. Navigation paths are defined in `src/lib/nav.ts`:
+
+- Each role has a `ROLE_NAV_PATHS` entry defining accessible routes
+- Navigation automatically filters based on `getAuthRole()`
+- Role-specific dashboards are included in each role's navigation
+
+## Type Safety
+
+The app uses TypeScript with a `SessionUser` interface (`lib/types/auth.ts`) for type-safe session access:
+- Import `SessionUser` type: `import type { SessionUser } from "@/lib/types/auth"`
+- Use instead of `session.user as any`: `const user = session.user as SessionUser`
+- Provides autocomplete and type checking for all session user properties
+
 ## Next Steps for Production
 
-1. **Add Authentication:**
-   - Implement NextAuth.js
-   - Add login/signup pages
-   - Protect routes based on user role
-
-2. **Build Real App Pages:**
-   - Create role-specific dashboards (similar to `/demo` but with real data)
-   - Add event detail pages
-   - Build user profile management
-
-3. **Replace Demo with Real:**
-   - Once real pages are built, you can keep `/demo` as a public preview
-   - Or redirect authenticated users to real app pages
-
-4. **Add Navigation:**
-   - Create a main app layout with sidebar (like DemoShell)
-   - Use role-based navigation
-   - Add breadcrumbs and proper routing
+1. ✅ **Authentication:** NextAuth.js implemented with role-based access
+2. ✅ **Role-Specific Dashboards:** All role dashboards created
+3. ✅ **Onboarding Flow:** Users select school and role during onboarding
+4. **Future Enhancements:**
+   - Add more role-specific features
+   - Enhance error boundaries
+   - Add comprehensive testing
+   - Improve type safety across all pages (migrate remaining `session.user as any` to `SessionUser`)
 

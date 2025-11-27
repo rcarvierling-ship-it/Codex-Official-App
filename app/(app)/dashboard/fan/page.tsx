@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import Link from "next/link";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Fan Dashboard" };
 export const runtime = "nodejs";
@@ -19,7 +20,7 @@ export default async function FanDashboardPage() {
     redirect("/dashboard");
   }
 
-  const user = session.user as any;
+  const user = session.user as SessionUser;
   const canSeeAll = user?.canSeeAll ?? false;
   const accessibleSchools = user?.accessibleSchools ?? [];
   const accessibleLeagues = user?.accessibleLeagues ?? [];

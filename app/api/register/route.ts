@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { hasDbEnv } from "@/lib/db";
+import { normalizeRole } from "@/lib/nav";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -108,7 +109,7 @@ export async function POST(request: Request) {
               email varchar(255) NOT NULL UNIQUE,
               image varchar(1024),
               password varchar(255),
-              role varchar(32) NOT NULL DEFAULT 'USER',
+              role varchar(32) NOT NULL DEFAULT 'fan',
               active_school_id uuid,
               created_at timestamp NOT NULL DEFAULT now()
             )
@@ -134,9 +135,10 @@ export async function POST(request: Request) {
         }
 
         // Insert user using raw SQL
+        const defaultRole = normalizeRole("fan");
         const insertResult = await sql<{ id: string }>`
           INSERT INTO users (name, email, password, role, created_at)
-          VALUES (${name.trim()}, ${normalizedEmail}, ${hashedPassword}, 'USER', NOW())
+          VALUES (${name.trim()}, ${normalizedEmail}, ${hashedPassword}, ${defaultRole}, NOW())
           RETURNING id
         `;
 
