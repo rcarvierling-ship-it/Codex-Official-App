@@ -10,39 +10,35 @@ export const metadata = {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+import { getRoleDashboardPath } from "@/lib/onboarding-redirect";
+
 // Get the appropriate redirect path based on role
 function getRedirectPath(role: string): string {
-  if (role === "SUPER_ADMIN" || role === "ADMIN") {
-    return "/admin";
-  }
-  if (role === "AD") {
-    return "/approvals";
-  }
-  if (role === "OFFICIAL") {
-    return "/assignments";
-  }
-  // For COACH and USER, go to dashboard
-  return "/dashboard";
+  return getRoleDashboardPath(role);
 }
 
 export default async function OnboardingPage() {
   const session = await requireAuth({ requireSchool: false });
   const email = (session.user as any)?.email;
+  const userId = (session.user as any)?.id;
   if (!email) {
     redirect("/(auth)/login");
   }
 
-  const [membership, schools, role] = await Promise.all([
-    getUserSchool(email),
-    listSchools(),
-    getAuthRole(),
-  ]);
-
-  if (membership?.schoolId) {
-    // Redirect to role-appropriate dashboard
-    const redirectPath = getRedirectPath(role);
+  // Check if user has completed onboarding
+  const { hasCompletedOnboarding, getUserRole } = await import("@/lib/onboarding-helpers");
+  const completed = await hasCompletedOnboarding(userId, email);
+  
+  if (completed) {
+    // User has completed onboarding, redirect to their role dashboard
+    const sessionRole = (session.user as any)?.role;
+    const userRole = await getUserRole(userId, sessionRole);
+    const redirectPath = getRedirectPath(userRole);
     redirect(redirectPath);
   }
+
+  // If onboarding not completed, fetch schools list for the form
+  const schools = await listSchools();
 
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-4 py-16">

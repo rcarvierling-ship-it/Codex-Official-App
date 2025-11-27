@@ -17,7 +17,7 @@ const featureFlags = [
 ];
 
 export default async function FeatureFlagsPage() {
-  await requireRole("SUPER_ADMIN");
+  await requireRole("league_admin");
 
   return (
     <div className="space-y-6">

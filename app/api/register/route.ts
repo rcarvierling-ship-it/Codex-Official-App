@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
-
+    
     const { name, email, password } = await request.json();
 
     // Validate input
@@ -57,25 +57,25 @@ export async function POST(request: Request) {
       const db = await getDb();
 
       // Check if user already exists
-      const existing = await db
-        .select({ id: users.id })
-        .from(users)
+    const existing = await db
+      .select({ id: users.id })
+      .from(users)
         .where(eq(users.email, normalizedEmail))
-        .limit(1);
+      .limit(1);
 
-      if (existing.length > 0) {
-        return NextResponse.json(
-          { message: "An account with that email already exists." },
-          { status: 409 },
-        );
-      }
+    if (existing.length > 0) {
+      return NextResponse.json(
+        { message: "An account with that email already exists." },
+        { status: 409 },
+      );
+    }
 
       // Insert new user into Neon users table
       const result = await db.insert(users).values({
         name: name.trim(),
         email: normalizedEmail,
         password: hashedPassword,
-        role: "USER", // Default role for new signups
+        role: "fan", // Default role for new signups
       }).returning({ id: users.id });
 
       if (!result || result.length === 0) {

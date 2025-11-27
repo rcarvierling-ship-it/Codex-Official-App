@@ -2,11 +2,13 @@ import { getEvents } from "@/lib/repos/events";
 import { getRequests } from "@/lib/repos/requests";
 import { getAssignments } from "@/lib/repos/assignments";
 import { getUsers } from "@/lib/repos/users";
-import { requireAuth } from "@/lib/auth-helpers";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { getGameChangeRequests } from "@/lib/repos/game-change-requests";
+import { getGameResultByEventId } from "@/lib/repos/standings";
+import { requireAuth, getAuthRole } from "@/lib/auth-helpers";
 import { notFound } from "next/navigation";
+import { ChatThread } from "@/components/chat/ChatThread";
+import { EventDetailClient } from "./EventDetailClient";
+import { sql } from "@/lib/db";
 
 export const metadata = { title: "Event Details" };
 export const runtime = "nodejs";
@@ -28,11 +30,16 @@ export default async function EventDetailPage({
     ? null
     : { schoolIds: accessibleSchools, leagueIds: accessibleLeagues };
 
-  const [events, requests, assignments, users] = await Promise.all([
+  const role = await getAuthRole();
+  const currentUserId = (session.user as any)?.id || "";
+
+  const [events, requests, assignments, users, changeRequests, gameResult] = await Promise.all([
     getEvents(filterBy),
     getRequests(),
     getAssignments(),
     getUsers(),
+    getGameChangeRequests({ eventId: id }),
+    getGameResultByEventId(id),
   ]);
 
   const event = events.find((e) => e.id === id);
@@ -40,102 +47,89 @@ export default async function EventDetailPage({
     notFound();
   }
 
+  // Get team information
+  let teamHomeId: string | null = null;
+  let teamAwayId: string | null = null;
+  let teamHomeName: string = "Home Team";
+  let teamAwayName: string = "Away Team";
+
+  try {
+    const { rows: eventRows } = await sql<{
+      team_home_id: string | null;
+      team_away_id: string | null;
+    }>`
+      SELECT team_home_id, team_away_id
+      FROM events
+      WHERE id = ${id}
+      LIMIT 1
+    `;
+
+    if (eventRows.length > 0) {
+      teamHomeId = eventRows[0].team_home_id ? String(eventRows[0].team_home_id) : null;
+      teamAwayId = eventRows[0].team_away_id ? String(eventRows[0].team_away_id) : null;
+
+      // Get team names
+      if (teamHomeId) {
+        const { rows: homeTeamRows } = await sql<{ name: string }>`
+          SELECT name FROM teams WHERE id = ${teamHomeId} LIMIT 1
+        `;
+        if (homeTeamRows.length > 0) {
+          teamHomeName = String(homeTeamRows[0].name);
+        }
+      }
+
+      if (teamAwayId) {
+        const { rows: awayTeamRows } = await sql<{ name: string }>`
+          SELECT name FROM teams WHERE id = ${teamAwayId} LIMIT 1
+        `;
+        if (awayTeamRows.length > 0) {
+          teamAwayName = String(awayTeamRows[0].name);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to fetch team information:", error);
+  }
+
   const eventRequests = requests.filter((r) => r.eventId === id);
   const eventAssignments = assignments.filter((a) => a.eventId === id);
-  const userMap = new Map(users.map((u) => [u.id, u]));
+  const userMap = new Map(users.map((u) => [u.id, { name: u.name, email: u.email }]));
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">{event.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          {format(new Date(event.startsAt), "MMM d, yyyy 'at' h:mm a")}
-          {event.endsAt && ` - ${format(new Date(event.endsAt), "h:mm a")}`}
-        </p>
-      </header>
+      <EventDetailClient
+        event={event}
+        requests={eventRequests}
+        assignments={eventAssignments}
+        userMap={userMap}
+        currentUserId={currentUserId}
+        currentUserRole={role}
+        changeRequests={changeRequests.map((cr) => ({
+          id: cr.id,
+          eventId: cr.eventId,
+          changeType: cr.changeType,
+          currentValue: cr.currentValue,
+          requestedValue: cr.requestedValue,
+          reason: cr.reason,
+          status: cr.status,
+          createdAt: cr.createdAt,
+          requester: cr.requester,
+        }))}
+        gameResult={gameResult}
+        teamHomeId={teamHomeId}
+        teamAwayId={teamAwayId}
+        teamHomeName={teamHomeName}
+        teamAwayName={teamAwayName}
+      />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-lg">Requests</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {eventRequests.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No requests for this event.</p>
-            ) : (
-              eventRequests.map((request) => {
-                const user = userMap.get(request.userId);
-                return (
-                  <div key={request.id} className="rounded-lg border bg-background/60 p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-foreground">{user?.name ?? "Unknown"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(request.submittedAt), "MMM d, h:mm a")}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          request.status === "APPROVED"
-                            ? "default"
-                            : request.status === "DECLINED"
-                            ? "destructive"
-                            : "outline"
-                        }
-                        className="text-xs"
-                      >
-                        {request.status}
-                      </Badge>
-                    </div>
-                    {request.message && (
-                      <p className="text-xs text-muted-foreground mt-2">{request.message}</p>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-lg">Assignments</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {eventAssignments.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No assignments for this event.</p>
-            ) : (
-              eventAssignments.map((assignment) => {
-                const user = userMap.get(assignment.userId);
-                return (
-                  <div key={assignment.id} className="rounded-lg border bg-background/60 p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-foreground">{user?.name ?? "Unknown"}</p>
-                        <p className="text-xs text-muted-foreground">{assignment.role}</p>
-                      </div>
-                      <Badge
-                        variant={
-                          assignment.status === "COMPLETED"
-                            ? "default"
-                            : assignment.status === "CANCELLED"
-                            ? "destructive"
-                            : "outline"
-                        }
-                        className="text-xs"
-                      >
-                        {assignment.status}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Confirmed: {format(new Date(assignment.createdAt), "MMM d, h:mm a")}
-                    </p>
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
+      {/* Game Chat Thread */}
+      <div className="mt-6">
+        <ChatThread
+          entityType="EVENT"
+          entityId={id}
+          currentUserId={currentUserId}
+          users={userMap}
+        />
       </div>
     </div>
   );

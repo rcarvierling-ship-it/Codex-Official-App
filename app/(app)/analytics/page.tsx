@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function AnalyticsPage() {
-  const { session } = await requireRole("ADMIN");
+  const { session } = await requireRole("league_admin");
   const user = session.user as any;
   const canSeeAll = user?.canSeeAll ?? false;
   const accessibleSchools = user?.accessibleSchools ?? [];
@@ -33,7 +33,7 @@ export default async function AnalyticsPage() {
   const requestsForSchool = requests.filter((request) => eventIdSet.has(request.eventId));
   const assignmentsForSchool = assignments.filter((assignment) => eventIdSet.has(assignment.eventId));
   const officialsForSchool = users.filter((user) => {
-    if (user.role && user.role !== "OFFICIAL") return false;
+    if (user.role && user.role !== "official") return false;
     if (canSeeAll) return true;
     if (Array.isArray(user.schoolIds) && user.schoolIds.length > 0) {
       return user.schoolIds.some((id) => accessibleSchools.includes(id));

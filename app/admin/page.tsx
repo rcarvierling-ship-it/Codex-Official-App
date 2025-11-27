@@ -6,9 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { requireRole } from "@/lib/auth-helpers";
 import { getRequests } from "@lib/repos/requests";
+import { getAssignments } from "@/lib/repos/assignments";
 import { hasDbEnv } from "@/lib/db";
 import { getEvents } from "@/lib/repos/events";
 import { getUsers } from "@/lib/repos/users";
+import { AdminDashboardClient } from "../(app)/admin/AdminDashboardClient";
+import { subDays, startOfDay } from "date-fns";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,16 +41,48 @@ async function getWaitlistEntries() {
   }
 }
 
-export default async function AdminPage() {
-  const { role, session } = await requireRole("ADMIN");
-  const activeSchoolId = (session.user as any)?.schoolId ?? null;
-  const activeSchoolName = (session.user as any)?.school?.name ?? "";
+async function getTeams(schoolIds: string[]) {
+  try {
+    if (schoolIds.length === 0) return [];
+    const { sql: sqlQuery } = await import("@/lib/db");
+    const { rows } = await sqlQuery<{ id: string; name: string; sport: string | null; level: string | null; school_id: string | null }>`
+      SELECT id, name, sport, level, school_id
+      FROM teams
+      WHERE school_id = ANY(${schoolIds})
+      ORDER BY name ASC
+    `;
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      sport: r.sport,
+      level: r.level,
+      schoolId: r.school_id,
+    }));
+  } catch {
+    return [];
+  }
+}
 
-  const [events, users, waitlistRowsRaw, requests] = await Promise.all([
-    getEvents(),
+export default async function AdminPage() {
+  const { role, session } = await requireRole("league_admin");
+  const user = session.user as any;
+  const activeSchoolId = user?.schoolId ?? null;
+  const activeSchoolName = user?.school?.name ?? "";
+  const canSeeAll = user?.canSeeAll ?? false;
+  const accessibleSchools = user?.accessibleSchools ?? [];
+  const accessibleLeagues = user?.accessibleLeagues ?? [];
+
+  const filterBy = canSeeAll
+    ? null
+    : { schoolIds: accessibleSchools, leagueIds: accessibleLeagues };
+
+  const [events, users, waitlistRowsRaw, requests, assignments, teams] = await Promise.all([
+    getEvents(filterBy),
     getUsers(),
     getWaitlistEntries(),
     getRequests(),
+    getAssignments(),
+    getTeams(accessibleSchools),
   ]);
 
   const eventsForSchool = activeSchoolId
@@ -65,8 +100,57 @@ export default async function AdminPage() {
     return String(entry.org).toLowerCase().includes(activeSchoolName.toLowerCase());
   });
 
+  const eventMap = new Map(events.map((e) => [e.id, e]));
+  const userMap = new Map(users.map((u) => [u.id, u]));
   const eventIdSet = new Set(eventsForSchool.map((event) => event.id));
   const requestsForSchool = requests.filter((request) => eventIdSet.has(request.eventId));
+
+  // Get upcoming events (next 30 days)
+  const now = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+  const upcomingEvents = events
+    .filter((e) => {
+      const eventDate = new Date(e.startsAt);
+      return eventDate >= now && eventDate <= thirtyDaysFromNow;
+    })
+    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+    .slice(0, 10);
+
+  // Get recent events (last 30 days)
+  const last30Days = startOfDay(subDays(now, 30));
+  const recentEvents = events
+    .filter((e) => {
+      const eventDate = new Date(e.startsAt);
+      return eventDate >= last30Days && eventDate < now;
+    })
+    .sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
+    .slice(0, 10);
+
+  // Get requests and assignments
+  const eventRequests = requests
+    .filter((r) => eventIdSet.has(r.eventId))
+    .map((r) => ({
+      ...r,
+      event: eventMap.get(r.eventId),
+      user: userMap.get(r.userId),
+    }));
+
+  const eventAssignments = assignments
+    .filter((a) => eventIdSet.has(a.eventId))
+    .map((a) => ({
+      ...a,
+      event: eventMap.get(a.eventId),
+      user: userMap.get(a.userId),
+    }))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // Get officials
+  const officials = users.filter((u) => u.role === "official");
+
+  // Get recent users (just take first 10, sorting by createdAt if available)
+  const recentUsers = users.slice(0, 10);
 
   const eventsCount = eventsForSchool.length;
   const usersCount = usersForSchool.length;
@@ -76,48 +160,29 @@ export default async function AdminPage() {
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-12 lg:flex-row">
       <Sidebar role={role} title="Operations" />
       <div className="flex-1 space-y-10">
-        <header className="flex flex-col gap-3">
-          <span className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--accent))]">
-            Admin / Overview
-          </span>
-          <h1 className="text-4xl font-semibold tracking-tight">Operations dashboard</h1>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            Live data synced from Vercel Postgres. The waitlist form on the landing page funnels submissions here for review.
-          </p>
-        </header>
+        {/* Use the new AdminDashboardClient for the main dashboard */}
+        <AdminDashboardClient
+          data={{
+            upcomingEvents,
+            recentEvents,
+            myTeams: teams,
+            eventRequests,
+            eventAssignments,
+            users: recentUsers,
+            stats: {
+              totalEvents: events.length,
+              totalTeams: teams.length,
+              totalUsers: users.length,
+              pendingRequests: eventRequests.filter((r) => r.status === "PENDING").length,
+              confirmedAssignments: eventAssignments.filter((a) => a.status === "ASSIGNED").length,
+              activeOfficials: officials.length,
+              recentEventsCount: recentEvents.length,
+            },
+            schoolName: activeSchoolName || null,
+          }}
+        />
 
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="border border-[hsl(var(--accent)/0.3)] bg-card/80">
-            <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Events</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <span className="text-3xl font-semibold text-foreground">{eventsCount}</span>
-              <p className="mt-1 text-xs text-muted-foreground">Total events in Postgres</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-border bg-card/80">
-            <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Users</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <span className="text-3xl font-semibold text-foreground">{usersCount}</span>
-              <p className="mt-1 text-xs text-muted-foreground">Registered portal users</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-[hsl(var(--accent)/0.3)] bg-card/80">
-            <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Waitlist</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <span className="text-3xl font-semibold text-foreground">{waitlistCount}</span>
-              <p className="mt-1 text-xs text-muted-foreground">High-intent prospects</p>
-            </CardContent>
-          </Card>
-        </section>
-
+        {/* Keep waitlist section below */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Latest waitlist entries</h2>

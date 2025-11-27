@@ -87,7 +87,7 @@ export default function DemoOverviewPage() {
 
   const canApprove = ["SUPER_ADMIN", "ADMIN", "AD"].includes(currentRole);
   const officials = useMemo(
-    () => (users ?? []).filter((user: any) => user.role === "OFFICIAL"),
+    () => (users ?? []).filter((user: any) => user.role === "official"),
     [users]
   );
   const handleCreateLeague = () => {
@@ -320,7 +320,7 @@ function SchoolAdminDashboard({
   const currentRosters = useDemoStore((state) => state.rosters);
   const activeRosters = rosters ?? currentRosters;
   
-  const officials = (users ?? []).filter((u: any) => u.role === "OFFICIAL");
+  const officials = (users ?? []).filter((u: any) => u.role === "official");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(
     teams[0]?.id ?? null
   );

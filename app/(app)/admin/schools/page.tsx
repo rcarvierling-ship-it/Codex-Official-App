@@ -2,13 +2,15 @@ import { requireRole } from "@/lib/auth-helpers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listSchools } from "@/lib/repos/schools";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export const metadata = { title: "Schools" };
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function SchoolsPage() {
-  await requireRole("SUPER_ADMIN");
+  await requireRole("league_admin");
   const schools = await listSchools();
 
   return (
@@ -31,15 +33,25 @@ export default async function SchoolsPage() {
           {schools.map((school) => (
             <Card key={school.id} className="bg-card/80">
               <CardHeader>
-                <CardTitle className="text-lg">{school.name}</CardTitle>
+                <CardTitle className="text-lg">
+                  <Link
+                    href={`/admin/schools/${school.id}`}
+                    className="hover:text-[hsl(var(--accent))] transition-colors"
+                  >
+                    {school.name}
+                  </Link>
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
                 <Badge variant="outline" className="text-xs">
                   {school.slug}
                 </Badge>
                 {school.leagueId && (
                   <p className="text-xs">League: {school.leagueId}</p>
                 )}
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href={`/admin/schools/${school.id}`}>View School & Chat</Link>
+                </Button>
               </CardContent>
             </Card>
           ))}

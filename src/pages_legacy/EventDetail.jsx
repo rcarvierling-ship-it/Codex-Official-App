@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+// Legacy file - base44 removed
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -27,70 +27,70 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function EventDetail() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [user, setUser] = useState(null);
-  const [eventId, setEventId] = useState(null);
+  const navigate = useNavigate(); */
+  const queryClient = useQueryClient(); */
+  const { toast } = useToast(); */
+  const [user, setUser] = useState(null); */
+  const [eventId, setEventId] = useState(null); */
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
-    setEventId(id);
+    const params = new URLSearchParams(window.location.search); */
+    const id = params.get('id'); */
+    setEventId(id); */
 
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
+        const currentUser = await /* base44 removed */auth.me(); */
+        setUser(currentUser); */
       } catch (error) {
-        base44.auth.redirectToLogin();
+        /* base44 removed */auth.redirectToLogin(); */
       }
     };
-    loadUser();
-  }, []);
+    loadUser(); */
+  }, []); */
 
   const { data: events = [] } = useQuery({
     queryKey: ['events'],
-    queryFn: () => base44.entities.Event.list('-created_date', 100),
-  });
+    queryFn: () => /* base44 removed */entities.Event.list('-created_date', 100),
+  }); */
 
   const { data: requests = [] } = useQuery({
     queryKey: ['requests'],
-    queryFn: () => base44.entities.Request.list('-created_date', 100),
-  });
+    queryFn: () => /* base44 removed */entities.Request.list('-created_date', 100),
+  }); */
 
   const { data: assignments = [] } = useQuery({
     queryKey: ['assignments'],
-    queryFn: () => base44.entities.Assignment.list('-created_date', 100),
-  });
+    queryFn: () => /* base44 removed */entities.Assignment.list('-created_date', 100),
+  }); */
 
   const { data: venue } = useQuery({
     queryKey: ['venue', events.find(e => e.id === eventId)?.venue_id],
     queryFn: async () => {
-      const event = events.find(e => e.id === eventId);
+      const event = events.find(e => e.id === eventId); */
       if (!event?.venue_id) return null;
-      const allVenues = await base44.entities.Venue.list('name', 100);
-      return allVenues.find(v => v.id === event.venue_id);
+      const allVenues = await /* base44 removed */entities.Venue.list('name', 100); */
+      return allVenues.find(v => v.id === event.venue_id); */
     },
     enabled: !!eventId && !!events.find(e => e.id === eventId)?.venue_id,
-  });
+  }); */
 
-  const event = events.find(e => e.id === eventId);
-  const eventRequests = requests.filter(r => r.event_id === eventId);
-  const eventAssignments = assignments.filter(a => a.event_id === eventId);
-  const pendingRequests = eventRequests.filter(r => r.status === 'pending');
+  const event = events.find(e => e.id === eventId); */
+  const eventRequests = requests.filter(r => r.event_id === eventId); */
+  const eventAssignments = assignments.filter(a => a.event_id === eventId); */
+  const pendingRequests = eventRequests.filter(r => r.status === 'pending'); */
 
   const approveMutation = useMutation({
     mutationFn: async ({ requestId, request }) => {
       // Update request status
-      await base44.entities.Request.update(requestId, {
+      await /* base44 removed */entities.Request.update(requestId, {
         status: 'approved',
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
-      });
+      }); */
 
       // Create assignment
-      await base44.entities.Assignment.create({
+      await /* base44 removed */entities.Assignment.create({
         event_id: request.event_id,
         official_id: request.official_id,
         official_name: request.official_name,
@@ -98,53 +98,53 @@ export default function EventDetail() {
         position: request.position_requested,
         status: 'confirmed',
         pay_amount: event?.pay_rate || 0,
-      });
+      }); */
 
       // Update event officials count
       if (event) {
-        await base44.entities.Event.update(event.id, {
+        await /* base44 removed */entities.Event.update(event.id, {
           officials_assigned: (event.officials_assigned || 0) + 1,
-        });
+        }); */
       }
 
       // Send email notification
       try {
-        await base44.integrations.Core.SendEmail({
+        await /* base44 removed */integrations.Core.SendEmail({
           to: request.official_email,
           subject: `Assignment Confirmed: ${event?.title}`,
           body: `Hi ${request.official_name},\n\nYour request to work "${event?.title}" has been approved!\n\nEvent Details:\nDate: ${format(parseISO(event?.start_time), 'MMM d, yyyy')}\nTime: ${format(parseISO(event?.start_time), 'h:mm a')}\nPosition: ${request.position_requested}\n\nThank you!`
-        });
+        }); */
       } catch (error) {
-        console.log("Email send failed");
+        console.log("Email send failed"); */
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['requests']);
-      queryClient.invalidateQueries(['assignments']);
-      queryClient.invalidateQueries(['events']);
+      queryClient.invalidateQueries(['requests']); */
+      queryClient.invalidateQueries(['assignments']); */
+      queryClient.invalidateQueries(['events']); */
       toast({
         title: "Request approved!",
         description: "Assignment created and official notified.",
-      });
+      }); */
     },
-  });
+  }); */
 
   const declineMutation = useMutation({
     mutationFn: async (requestId) => {
-      await base44.entities.Request.update(requestId, {
+      await /* base44 removed */entities.Request.update(requestId, {
         status: 'declined',
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
-      });
+      }); */
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['requests']);
+      queryClient.invalidateQueries(['requests']); */
       toast({
         title: "Request declined",
         description: "The official has been notified.",
-      });
+      }); */
     },
-  });
+  }); */
 
   const isAdmin = user?.app_role === 'super_admin' || user?.app_role === 'admin';
   const isAD = user?.app_role === 'athletic_director';
@@ -155,7 +155,7 @@ export default function EventDetail() {
       <div className="container mx-auto px-4 py-8">
         <Skeleton className="h-96 rounded-2xl" />
       </div>
-    );
+    ); */
   }
 
   return (
@@ -387,5 +387,5 @@ export default function EventDetail() {
         )}
       </div>
     </div>
-  );
+  ); */
 }

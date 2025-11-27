@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+// Legacy file - base44 removed
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -31,58 +31,58 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Events() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [user, setUser] = useState(null);
+  const navigate = useNavigate(); */
+  const queryClient = useQueryClient(); */
+  const { toast } = useToast(); */
+  const [user, setUser] = useState(null); */
   const [filters, setFilters] = useState({
     sport: "all",
     level: "all",
     status: "scheduled",
     search: "",
-  });
+  }); */
 
   React.useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
+        const currentUser = await /* base44 removed */auth.me(); */
+        setUser(currentUser); */
       } catch (error) {
-        base44.auth.redirectToLogin();
+        /* base44 removed */auth.redirectToLogin(); */
       }
     };
-    loadUser();
-  }, []);
+    loadUser(); */
+  }, []); */
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['events'],
-    queryFn: () => base44.entities.Event.list('-start_time', 100),
-  });
+    queryFn: () => /* base44 removed */entities.Event.list('-start_time', 100),
+  }); */
 
   const { data: venues = [] } = useQuery({
     queryKey: ['venues'],
-    queryFn: () => base44.entities.Venue.list('name', 50),
-  });
+    queryFn: () => /* base44 removed */entities.Venue.list('name', 50),
+  }); */
 
   const { data: schools = [] } = useQuery({
     queryKey: ['schools'],
-    queryFn: () => base44.entities.School.list('name', 50),
-  });
+    queryFn: () => /* base44 removed */entities.School.list('name', 50),
+  }); */
 
   const createRequestMutation = useMutation({
-    mutationFn: (requestData) => base44.entities.Request.create(requestData),
+    mutationFn: (requestData) => /* base44 removed */entities.Request.create(requestData),
     onSuccess: () => {
-      queryClient.invalidateQueries(['requests']);
+      queryClient.invalidateQueries(['requests']); */
       toast({
         title: "Request submitted!",
         description: "The athletic director will review your request.",
-      });
+      }); */
     },
-  });
+  }); */
 
   const handleRequestToWork = async (event) => {
     if (!user) {
-      base44.auth.redirectToLogin();
+      /* base44 removed */auth.redirectToLogin(); */
       return;
     }
 
@@ -95,7 +95,7 @@ export default function Events() {
       position_requested: "referee",
     };
 
-    createRequestMutation.mutate(requestData);
+    createRequestMutation.mutate(requestData); */
   };
 
   const filteredEvents = events.filter((event) => {
@@ -104,20 +104,20 @@ export default function Events() {
     if (filters.status !== "all" && event.status !== filters.status) return false;
     if (filters.search && !event.title?.toLowerCase().includes(filters.search.toLowerCase())) return false;
     return true;
-  });
+  }); */
 
   const getVenueName = (venueId) => {
-    const venue = venues.find(v => v.id === venueId);
+    const venue = venues.find(v => v.id === venueId); */
     return venue?.name || "TBD";
   };
 
   const getSchoolName = (schoolId) => {
-    const school = schools.find(s => s.id === schoolId);
+    const school = schools.find(s => s.id === schoolId); */
     return school?.name || "Unknown";
   };
 
   const getEventTimeLabel = (startTime) => {
-    const date = parseISO(startTime);
+    const date = parseISO(startTime); */
     if (isToday(date)) return { label: "Today", color: "text-green-600" };
     if (isTomorrow(date)) return { label: "Tomorrow", color: "text-blue-600" };
     return { label: format(date, "MMM d"), color: "text-slate-600" };
@@ -218,7 +218,7 @@ export default function Events() {
             </div>
           ) : (
             filteredEvents.map((event, index) => {
-              const timeLabel = getEventTimeLabel(event.start_time);
+              const timeLabel = getEventTimeLabel(event.start_time); */
               const needsOfficials = event.officials_assigned < event.officials_needed;
               
               return (
@@ -306,8 +306,8 @@ export default function Events() {
                           {isOfficial && needsOfficials && (
                             <Button
                               onClick={(e) => {
-                                e.stopPropagation();
-                                handleRequestToWork(event);
+                                e.stopPropagation(); */
+                                handleRequestToWork(event); */
                               }}
                               disabled={createRequestMutation.isPending}
                               className="flex-1 bg-gradient-to-r from-[#2FFFCB] to-cyan-400 text-slate-900 hover:shadow-lg rounded-xl font-semibold"
@@ -319,8 +319,8 @@ export default function Events() {
                           {!isOfficial && (
                             <Button
                               onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(createPageUrl("EventDetail") + `?id=${event.id}`);
+                                e.stopPropagation(); */
+                                navigate(createPageUrl("EventDetail") + `?id=${event.id}`); */
                               }}
                               variant="outline"
                               className="flex-1 rounded-xl"
@@ -334,11 +334,11 @@ export default function Events() {
                     </div>
                   </Card>
                 </motion.div>
-              );
+              ); */
             })
           )}
         </AnimatePresence>
       </div>
     </div>
-  );
+  ); */
 }

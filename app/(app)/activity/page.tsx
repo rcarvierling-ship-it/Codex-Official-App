@@ -93,7 +93,7 @@ async function getActivityLogs(
 }
 
 export default async function ActivityPage() {
-  const { session } = await requireRole("ADMIN");
+  const { session } = await requireRole("league_admin");
   const user = session.user as any;
   const canSeeAll = user?.canSeeAll ?? false;
   const accessibleSchools = user?.accessibleSchools ?? [];

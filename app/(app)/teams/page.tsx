@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { sql } from "@/lib/db";
+import Link from "next/link";
 
 export const metadata = { title: "Teams" };
 export const runtime = "nodejs";
@@ -53,7 +54,14 @@ export default async function TeamsPage() {
           {scopedTeams.map((team) => (
             <Card key={team.id} className="bg-card/80">
               <CardHeader>
-                <CardTitle className="text-lg">{team.name}</CardTitle>
+                <CardTitle className="text-lg">
+                  <Link
+                    href={`/teams/${team.id}`}
+                    className="hover:text-[hsl(var(--accent))] transition-colors"
+                  >
+                    {team.name}
+                  </Link>
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
                 {team.sport && (
@@ -68,9 +76,9 @@ export default async function TeamsPage() {
                     )}
                   </div>
                 )}
-                {team.schoolId && (
-                  <p className="text-xs">School ID: {team.schoolId}</p>
-                )}
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href={`/teams/${team.id}`}>View Team & Chat</Link>
+                </Button>
               </CardContent>
             </Card>
           ))}

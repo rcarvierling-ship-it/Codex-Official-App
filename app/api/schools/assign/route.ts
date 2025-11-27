@@ -22,7 +22,67 @@ export async function POST(request: Request) {
     }
 
     await assignUserToSchool(session.user.email, school.id);
-    return NextResponse.json({ ok: true });
+    
+    // Mark onboarding as completed
+    const userId = (session.user as any)?.id;
+    try {
+      const { sql } = await import("@/lib/db");
+      if (userId) {
+        await sql`
+          UPDATE users
+          SET onboarding_completed = true
+          WHERE id = ${userId}
+        `;
+      } else {
+        await sql`
+          UPDATE users
+          SET onboarding_completed = true
+          WHERE email = ${session.user.email}
+        `;
+      }
+    } catch (error) {
+      console.warn("[api/schools/assign] Failed to set onboarding_completed", error);
+      // Continue - the column might not exist yet
+    }
+    
+    // Try to verify the assignment, but don't fail if it's not immediately available
+    // The client-side code has retry logic to handle database replication delays
+    // Also check the new user_school_roles table
+    let verified = false;
+    try {
+      // Check legacy system
+      const { getUserSchool } = await import("@/lib/repos/schools");
+      const membership = await getUserSchool(session.user.email);
+      if (membership?.schoolId === school.id) {
+        verified = true;
+      }
+    } catch (err) {
+      console.warn("[api/schools/assign] Legacy verification check failed", err);
+    }
+
+    // Also check the new context system
+    if (!verified) {
+      try {
+        const userId = (session.user as any)?.id;
+        if (userId) {
+          const { getActiveUserContext } = await import("@/lib/repos/user-contexts");
+          const context = await getActiveUserContext(userId);
+          if (context?.schoolId === school.id) {
+            verified = true;
+          }
+        }
+      } catch (err) {
+        console.warn("[api/schools/assign] Context verification check failed", err);
+      }
+    }
+
+    // If not verified immediately, still return success - client will retry
+    // This prevents false negatives due to database replication delays
+    if (!verified) {
+      console.warn("[api/schools/assign] Assignment not immediately verified, but returning success. Client will retry.");
+    }
+    
+    return NextResponse.json({ ok: true, schoolId: school.id });
   } catch (error) {
     console.error("[api/schools/assign] failed", error);
     return NextResponse.json(

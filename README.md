@@ -1,8 +1,6 @@
-# Base44 App
+# The Official App
 
-
-This app was created automatically by Base44.
-It's a Vite+React app that communicates with the Base44 API.
+This is a Next.js application for managing sports operations, events, and officials.
 
 ## Running the app
 
@@ -16,5 +14,3 @@ npm run dev
 ```bash
 npm run build
 ```
-
-For more information and support, please contact Base44 support at app@base44.com.

@@ -1,6 +1,6 @@
 // src/server/db/schema.ts
 import {
-  pgTable, uuid, varchar, timestamp, jsonb,
+  pgTable, uuid, varchar, timestamp, jsonb, text, boolean,
 } from "drizzle-orm/pg-core";
 
 // users
@@ -11,8 +11,9 @@ export const users = pgTable("users", {
   image: varchar("image", { length: 1024 }),
   password: varchar("password", { length: 255 }),
   // was enum before; using varchar to unblock
-  role: varchar("role", { length: 32 }).notNull().default("USER"),
+  role: varchar("role", { length: 32 }).notNull().default("fan"),
   activeSchoolId: uuid("active_school_id"),
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -29,6 +30,14 @@ export const schools = pgTable("schools", {
   leagueId: uuid("league_id"),
   name: varchar("name", { length: 160 }).notNull(),
   slug: varchar("slug", { length: 160 }).notNull().unique(),
+  // Branding
+  primaryColor: varchar("primary_color", { length: 7 }), // Hex color code (e.g., #FF5733)
+  secondaryColor: varchar("secondary_color", { length: 7 }), // Hex color code
+  logoUrl: varchar("logo_url", { length: 1024 }), // URL to logo image
+  mascotName: varchar("mascot_name", { length: 80 }), // e.g., "Eagles", "Tigers"
+  mascotImageUrl: varchar("mascot_image_url", { length: 1024 }), // URL to mascot image
+  themeJson: jsonb("theme_json"), // Custom theme configuration
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const teams = pgTable("teams", {
@@ -123,6 +132,95 @@ export const userProfiles = pgTable("user_profiles", {
   id: uuid("id").defaultRandom().primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   schoolId: uuid("school_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const messages = pgTable("messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  entityType: varchar("entity_type", { length: 16 }).notNull(),
+  entityId: uuid("entity_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  content: varchar("content", { length: 5000 }).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const payments = pgTable("payments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  assignmentId: uuid("assignment_id").notNull().unique(),
+  userId: uuid("user_id").notNull(),
+  eventId: uuid("event_id").notNull(),
+  amount: varchar("amount", { length: 20 }).notNull(), // Using varchar for decimal
+  status: varchar("status", { length: 16 }).notNull().default("PENDING"),
+  approvedBy: uuid("approved_by"),
+  approvedAt: timestamp("approved_at"),
+  paidAt: timestamp("paid_at"),
+  notes: varchar("notes", { length: 1000 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const payoutSettings = pgTable("payout_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  leagueId: uuid("league_id"),
+  schoolId: uuid("school_id"),
+  defaultAmount: varchar("default_amount", { length: 20 }).notNull().default("75.00"),
+  roleBasedAmounts: jsonb("role_based_amounts"),
+  autoApprove: varchar("auto_approve", { length: 5 }).notNull().default("false"), // Using varchar for boolean
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const userSchoolRoles = pgTable("user_school_roles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  schoolId: uuid("school_id"),
+  leagueId: uuid("league_id"),
+  role: varchar("role", { length: 32 }).notNull(),
+  isActive: varchar("is_active", { length: 5 }).notNull().default("false"), // Using varchar for boolean
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const gameChangeRequests = pgTable("game_change_requests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  eventId: uuid("event_id").notNull(),
+  requestedBy: uuid("requested_by").notNull(),
+  changeType: varchar("change_type", { length: 32 }).notNull(),
+  currentValue: text("current_value"),
+  requestedValue: text("requested_value"),
+  reason: varchar("reason", { length: 1024 }),
+  status: varchar("status", { length: 16 }).notNull().default("PENDING"),
+  approvedBy: uuid("approved_by"),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Official availability blocks
+export const availabilityBlocks = pgTable("availability_blocks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  officialId: uuid("official_id").notNull(), // The user (official) who set this availability
+  startTime: timestamp("start_time").notNull(), // Start of availability/unavailability block
+  endTime: timestamp("end_time").notNull(), // End of availability/unavailability block
+  isAvailable: boolean("is_available").notNull().default(true), // true = available, false = unavailable
+  notes: varchar("notes", { length: 512 }), // Optional notes (e.g., "Prefer morning games")
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Game results for standings/leaderboards
+export const gameResults = pgTable("game_results", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  eventId: uuid("event_id").notNull().unique(), // One result per event/game
+  teamHomeId: uuid("team_home_id").notNull(),
+  teamAwayId: uuid("team_away_id").notNull(),
+  homeScore: varchar("home_score", { length: 10 }), // Score as string to handle various formats
+  awayScore: varchar("away_score", { length: 10 }),
+  status: varchar("status", { length: 16 }).notNull().default("SCHEDULED"), // SCHEDULED, COMPLETED, CANCELLED, POSTPONED
+  recordedBy: uuid("recorded_by"), // Official who submitted the score
+  recordedAt: timestamp("recorded_at"),
+  verifiedBy: uuid("verified_by"), // Coach who verified the score
+  verifiedAt: timestamp("verified_at"),
+  isLocked: boolean("is_locked").notNull().default(false), // League admin can lock/finalize
+  lockedBy: uuid("locked_by"), // League admin who locked the score
+  lockedAt: timestamp("locked_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

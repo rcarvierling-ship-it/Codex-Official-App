@@ -273,6 +273,17 @@ export default async function HomePage() {
                   size="lg"
                   className="border border-[hsl(var(--accent)/0.4)] bg-transparent text-foreground hover:border-[hsl(var(--accent)/0.6)] hover:text-[hsl(var(--accent))] text-sm sm:text-base px-6 py-6 sm:py-7"
                 >
+                  <Link href="/browser" className="flex items-center gap-2">
+                    Browse Leagues & Schedules
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="border border-[hsl(var(--accent)/0.4)] bg-transparent text-foreground hover:border-[hsl(var(--accent)/0.6)] hover:text-[hsl(var(--accent))] text-sm sm:text-base px-6 py-6 sm:py-7"
+                >
                   <Link href="#waitlist">Join Waitlist</Link>
                 </Button>
               </div>
@@ -833,6 +844,12 @@ export default async function HomePage() {
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
               <Link href="/demo" className="transition hover:text-foreground">
                 Demo
+              </Link>
+              <Link href="/browser" className="transition hover:text-foreground">
+                Browse
+              </Link>
+              <Link href="/standings" className="transition hover:text-foreground">
+                Standings
               </Link>
               <Link
                 href="#waitlist"

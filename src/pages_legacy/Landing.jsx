@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+// Legacy file - base44 removed
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,8 +32,8 @@ import { motion } from "framer-motion";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Landing() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const navigate = useNavigate(); */
+  const { toast } = useToast(); */
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -41,31 +41,31 @@ export default function Landing() {
     phone: "",
     role: "",
     message: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  }); */
+  const [isSubmitting, setIsSubmitting] = useState(false); */
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+    e.preventDefault(); */
+    setIsSubmitting(true); */
 
     try {
-      await base44.entities.Waitlist.create(formData);
+      await /* base44 removed */entities.Waitlist.create(formData); */
       
       // Send confirmation email
       try {
-        await base44.integrations.Core.SendEmail({
+        await /* base44 removed */integrations.Core.SendEmail({
           to: formData.email,
           subject: "Welcome to The Official App Waitlist",
           body: `Hi ${formData.name},\n\nThank you for joining our waitlist! We're excited to have you.\n\nWe'll reach out soon with updates about your access.\n\nBest regards,\nThe Official App Team`
-        });
+        }); */
       } catch (emailError) {
-        console.log("Email send failed, but waitlist entry created");
+        console.log("Email send failed, but waitlist entry created"); */
       }
 
       toast({
         title: "You're on the list! 🎉",
         description: "Check your email for confirmation.",
-      });
+      }); */
 
       setFormData({
         name: "",
@@ -74,15 +74,15 @@ export default function Landing() {
         phone: "",
         role: "",
         message: "",
-      });
+      }); */
     } catch (error) {
       toast({
         title: "Something went wrong",
         description: "Please try again or contact support.",
         variant: "destructive",
-      });
+      }); */
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); */
     }
   };
 
@@ -137,7 +137,7 @@ export default function Landing() {
               <span className="font-bold text-white">The Official App</span>
             </div>
             <Button
-              onClick={() => base44.auth.redirectToLogin()}
+              onClick={() => /* base44 removed */auth.redirectToLogin()}
               className="bg-gradient-to-r from-[#2FFFCB] to-cyan-400 text-slate-900 hover:shadow-lg hover:scale-105 transition-all duration-200 rounded-full font-semibold"
             >
               Launch App
@@ -189,7 +189,7 @@ export default function Landing() {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => base44.auth.redirectToLogin()}
+                onClick={() => /* base44 removed */auth.redirectToLogin()}
                 className="border-2 border-slate-700 hover:border-[#2FFFCB] hover:bg-[#2FFFCB]/5 text-white text-lg px-8 py-6 rounded-2xl font-semibold"
               >
                 Sign In
@@ -426,5 +426,5 @@ export default function Landing() {
         </div>
       </section>
     </div>
-  );
+  ); */
 }

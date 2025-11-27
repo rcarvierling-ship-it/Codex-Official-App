@@ -17,7 +17,6 @@
   "description": "The Official App • 🏀 — all-in-one sports operations platform",
   "dependencies": {
     "@auth/core": "^0.34.3",
-    "@base44/sdk": "^0.1.2",
     "@hookform/resolvers": "^4.1.2",
     "@neondatabase/serverless": "^1.0.2",
     "@radix-ui/react-accordion": "^1.2.3",

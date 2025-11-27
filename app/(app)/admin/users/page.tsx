@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
-  await requireRole("ADMIN");
+  await requireRole("league_admin");
   const users = await getUsers();
 
   const usersByRole = users.reduce((acc, user) => {

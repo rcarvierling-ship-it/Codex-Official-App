@@ -1,46 +1,36 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { School } from "@/lib/repos/schools";
+import { Loader2 } from "lucide-react";
+import { completeOnboardingJoinSchool, completeOnboardingCreateSchool } from "./actions";
+import { getRoleDashboardPath } from "@/lib/onboarding-redirect";
 
 type Props = {
   schools: School[];
 };
 
 const ROLES = [
-  { value: "USER", label: "User" },
-  { value: "COACH", label: "Coach" },
-  { value: "OFFICIAL", label: "Official" },
-  { value: "AD", label: "Athletic Director" },
-  { value: "ADMIN", label: "Administrator" },
+  { value: "fan", label: "Fan" },
+  { value: "coach", label: "Coach" },
+  { value: "official", label: "Official" },
+  { value: "athletic_director", label: "Athletic Director" },
+  { value: "school_admin", label: "School Administrator" },
+  { value: "league_admin", label: "League Administrator" },
 ] as const;
 
 export function SchoolOnboardingForm({ schools }: Props) {
+  const router = useRouter();
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>(schools[0]?.id ?? "");
   const [newSchoolName, setNewSchoolName] = useState("");
-  const [selectedRole, setSelectedRole] = useState<string>("USER");
+  const [selectedRole, setSelectedRole] = useState<string>("fan");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Get the appropriate redirect path based on role
-  const getRedirectPath = (role: string): string => {
-    // Redirect based on role to appropriate dashboard
-    if (role === "SUPER_ADMIN" || role === "ADMIN") {
-      return "/admin";
-    }
-    if (role === "AD") {
-      return "/approvals";
-    }
-    if (role === "OFFICIAL") {
-      return "/assignments";
-    }
-    // For COACH and USER, go to dashboard
-    return "/dashboard";
-  };
 
   const handleJoinExisting = async () => {
     if (!selectedSchoolId) {
@@ -52,34 +42,24 @@ export function SchoolOnboardingForm({ schools }: Props) {
     setIsLoading(true);
     
     try {
-      // Always update user role to ensure it's set correctly
-      try {
-        await fetch("/api/user/update-role", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: selectedRole }),
-        });
-      } catch (err) {
-        console.error("Failed to update role:", err);
-      }
-
-      const res = await fetch("/api/schools/assign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ schoolId: selectedSchoolId }),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setError(body?.message ?? "Unable to join this school right now.");
+      // Use server action to complete onboarding
+      const result = await completeOnboardingJoinSchool(selectedSchoolId, selectedRole);
+      
+      if (!result.success) {
+        setError(result.error || "Failed to complete onboarding. Please try again.");
         setIsLoading(false);
         return;
       }
 
-      // Force a full page reload to refresh the session from the database
-      // This ensures the session includes the newly assigned school
-      const redirectPath = getRedirectPath(selectedRole);
-      window.location.href = redirectPath;
+      // Force a full page reload to refresh the session
+      // This ensures the onboarding_completed status is reflected in the session
+      if (result.redirectPath) {
+        window.location.href = result.redirectPath;
+      } else {
+        // Fallback to role-based redirect
+        const redirectPath = getRoleDashboardPath(result.user?.role || selectedRole);
+        window.location.href = redirectPath;
+      }
     } catch (error) {
       console.error("Failed to join school:", error);
       setError("An unexpected error occurred. Please try again.");
@@ -97,34 +77,24 @@ export function SchoolOnboardingForm({ schools }: Props) {
     setIsLoading(true);
     
     try {
-      // Always update user role to ensure it's set correctly
-      try {
-        await fetch("/api/user/update-role", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: selectedRole }),
-        });
-      } catch (err) {
-        console.error("Failed to update role:", err);
-      }
-
-      const res = await fetch("/api/schools/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newSchoolName.trim() }),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setError(body?.message ?? "Unable to create a school right now.");
+      // Use server action to complete onboarding
+      const result = await completeOnboardingCreateSchool(newSchoolName.trim(), selectedRole);
+      
+      if (!result.success) {
+        setError(result.error || "Failed to complete onboarding. Please try again.");
         setIsLoading(false);
         return;
       }
 
-      // Force a full page reload to refresh the session from the database
-      // This ensures the session includes the newly assigned school
-      const redirectPath = getRedirectPath(selectedRole);
-      window.location.href = redirectPath;
+      // Force a full page reload to refresh the session
+      // This ensures the onboarding_completed status is reflected in the session
+      if (result.redirectPath) {
+        window.location.href = result.redirectPath;
+      } else {
+        // Fallback to role-based redirect
+        const redirectPath = getRoleDashboardPath(result.user?.role || selectedRole);
+        window.location.href = redirectPath;
+      }
     } catch (error) {
       console.error("Failed to create school:", error);
       setError("An unexpected error occurred. Please try again.");
@@ -193,7 +163,14 @@ export function SchoolOnboardingForm({ schools }: Props) {
             className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
             disabled={isLoading || schools.length === 0}
           >
-            {isLoading ? "Joining..." : "Join School"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Joining...
+              </>
+            ) : (
+              "Join School"
+            )}
           </Button>
         </CardContent>
       </Card>
@@ -222,7 +199,14 @@ export function SchoolOnboardingForm({ schools }: Props) {
             className="w-full"
             disabled={isLoading}
           >
-            {isLoading ? "Creating..." : "Create & Join"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              "Create & Join"
+            )}
           </Button>
         </CardContent>
       </Card>

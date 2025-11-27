@@ -1,5 +1,36 @@
 {
-  "node": {},
+  "node": {
+    "6083b11dc2414ca8ea4dfd2aab815a918bcd19d3b0": {
+      "workers": {
+        "app/onboarding/page": {
+          "moduleId": "[project]/Desktop/Codex-Official-App-main/.next-internal/server/app/onboarding/page/actions.js { ACTIONS_MODULE0 => \"[project]/Desktop/Codex-Official-App-main/app/onboarding/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "completeOnboardingJoinSchool",
+          "filename": "Desktop/Codex-Official-App-main/app/onboarding/actions.ts"
+        }
+      },
+      "layer": {
+        "app/onboarding/page": "action-browser"
+      },
+      "filename": "Desktop/Codex-Official-App-main/app/onboarding/actions.ts",
+      "exportedName": "completeOnboardingJoinSchool"
+    },
+    "70ac16b10a167d9bdef123aeca283ebeae6616ca6e": {
+      "workers": {
+        "app/onboarding/page": {
+          "moduleId": "[project]/Desktop/Codex-Official-App-main/.next-internal/server/app/onboarding/page/actions.js { ACTIONS_MODULE0 => \"[project]/Desktop/Codex-Official-App-main/app/onboarding/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "completeOnboardingCreateSchool",
+          "filename": "Desktop/Codex-Official-App-main/app/onboarding/actions.ts"
+        }
+      },
+      "layer": {
+        "app/onboarding/page": "action-browser"
+      },
+      "filename": "Desktop/Codex-Official-App-main/app/onboarding/actions.ts",
+      "exportedName": "completeOnboardingCreateSchool"
+    }
+  },
   "edge": {},
   "encryptionKey": "eNIIYGQyNdJI76tHBNfal7/HX0ifew0OgO7Kg+hd4ME="
 }

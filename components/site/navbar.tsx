@@ -9,6 +9,8 @@ import { DEMO_ENABLED } from "@lib/demoFlag";
 export function Navbar() {
   const navLinks = [
     ...(DEMO_ENABLED ? [{ href: "/demo", label: "Demo" }] : []),
+    { href: "/browser", label: "Browse" },
+    { href: "/standings", label: "Standings" },
     { href: "/#waitlist", label: "Join Waitlist" },
   ];
 

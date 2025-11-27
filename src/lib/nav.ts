@@ -1,17 +1,17 @@
 export type Role =
-  | "SUPER_ADMIN"
-  | "ADMIN"
-  | "AD"
-  | "COACH"
-  | "OFFICIAL"
-  | "USER";
+  | "league_admin"
+  | "school_admin"
+  | "athletic_director"
+  | "coach"
+  | "official"
+  | "fan";
 
 export type NavItem = {
   label: string;
   href: string;
 };
 
-export const DEFAULT_ROLE: Role = "USER";
+export const DEFAULT_ROLE: Role = "fan";
 
 const PATH_LABELS: Record<string, string> = {
   "/admin": "Overview",
@@ -36,10 +36,11 @@ const PATH_LABELS: Record<string, string> = {
   "/teams": "Teams",
   "/venues": "Venues",
   "/profile": "Profile",
+  "/payments": "Payments",
 };
 
 const ROLE_NAV_PATHS: Record<Role, string[]> = {
-  SUPER_ADMIN: [
+  league_admin: [
     "/admin",
     "/admin/leagues",
     "/admin/schools",
@@ -51,6 +52,7 @@ const ROLE_NAV_PATHS: Record<Role, string[]> = {
     "/approvals",
     "/assignments",
     "/announcements",
+    "/payments",
     "/admin/users",
     "/admin/feature-flags",
     "/admin/settings",
@@ -60,7 +62,7 @@ const ROLE_NAV_PATHS: Record<Role, string[]> = {
     "/dev-tools",
     "/test",
   ],
-  ADMIN: [
+  school_admin: [
     "/admin",
     "/events",
     "/teams",
@@ -70,12 +72,13 @@ const ROLE_NAV_PATHS: Record<Role, string[]> = {
     "/assignments",
     "/officials",
     "/announcements",
+    "/payments",
     "/admin/users",
     "/admin/settings",
     "/analytics",
     "/activity",
   ],
-  AD: [
+  athletic_director: [
     "/admin",
     "/events",
     "/requests",
@@ -83,21 +86,23 @@ const ROLE_NAV_PATHS: Record<Role, string[]> = {
     "/assignments",
     "/teams",
     "/announcements",
+    "/payments",
   ],
-  COACH: [
+  coach: [
     "/admin",
     "/events",
     "/requests",
     "/teams",
   ],
-  OFFICIAL: [
+  official: [
     "/admin",
     "/events",
     "/requests",
     "/assignments",
+    "/payments",
     "/profile",
   ],
-  USER: [
+  fan: [
     "/admin",
     "/events",
     "/announcements",
@@ -112,7 +117,29 @@ export function isRole(value: unknown): value is Role {
 
 export function normalizeRole(value: unknown): Role {
   if (isRole(value)) return value;
-  if (value === "STAFF") return "USER";
+  
+  // Map legacy roles to canonical roles
+  const str = String(value).toLowerCase();
+  
+  if (str === "super_admin" || str === "admin" || str === "organization_admin") {
+    return "league_admin";
+  }
+  if (str === "ad" || str === "athletic_director") {
+    return "athletic_director";
+  }
+  if (str === "user" || str === "parent" || str === "staff") {
+    return "fan";
+  }
+  if (str === "coach") {
+    return "coach";
+  }
+  if (str === "official") {
+    return "official";
+  }
+  if (str === "school_admin") {
+    return "school_admin";
+  }
+  
   return DEFAULT_ROLE;
 }
 

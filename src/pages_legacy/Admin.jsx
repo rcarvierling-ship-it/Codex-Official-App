@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+// Legacy file - base44 removed
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,76 +33,76 @@ import { useToast } from "@/components/ui/use-toast";
 import { format, parseISO } from "date-fns";
 
 export default function Admin() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [user, setUser] = useState(null);
+  const queryClient = useQueryClient(); */
+  const { toast } = useToast(); */
+  const [user, setUser] = useState(null); */
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await /* base44 removed */auth.me(); */
         if (currentUser.app_role !== 'super_admin' && currentUser.app_role !== 'admin') {
           toast({
             title: "Access Denied",
             description: "You don't have permission to access this page.",
             variant: "destructive",
-          });
+          }); */
           window.location.href = "/";
           return;
         }
-        setUser(currentUser);
+        setUser(currentUser); */
       } catch (error) {
-        base44.auth.redirectToLogin();
+        /* base44 removed */auth.redirectToLogin(); */
       }
     };
-    loadUser();
-  }, []);
+    loadUser(); */
+  }, []); */
 
   const { data: events = [], isLoading: eventsLoading } = useQuery({
     queryKey: ['events'],
-    queryFn: () => base44.entities.Event.list('-created_date', 100),
-  });
+    queryFn: () => /* base44 removed */entities.Event.list('-created_date', 100),
+  }); */
 
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ['requests'],
-    queryFn: () => base44.entities.Request.list('-created_date', 100),
-  });
+    queryFn: () => /* base44 removed */entities.Request.list('-created_date', 100),
+  }); */
 
   const { data: leagues = [] } = useQuery({
     queryKey: ['leagues'],
-    queryFn: () => base44.entities.League.list('name', 100),
-  });
+    queryFn: () => /* base44 removed */entities.League.list('name', 100),
+  }); */
 
   const { data: schools = [] } = useQuery({
     queryKey: ['schools'],
-    queryFn: () => base44.entities.School.list('name', 100),
-  });
+    queryFn: () => /* base44 removed */entities.School.list('name', 100),
+  }); */
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list('full_name', 100),
-  });
+    queryFn: () => /* base44 removed */entities.User.list('full_name', 100),
+  }); */
 
   const { data: waitlist = [] } = useQuery({
     queryKey: ['waitlist'],
-    queryFn: () => base44.entities.Waitlist.list('-created_date', 100),
-  });
+    queryFn: () => /* base44 removed */entities.Waitlist.list('-created_date', 100),
+  }); */
 
   const { data: announcements = [] } = useQuery({
     queryKey: ['announcements'],
-    queryFn: () => base44.entities.Announcement.list('-created_date', 50),
-  });
+    queryFn: () => /* base44 removed */entities.Announcement.list('-created_date', 50),
+  }); */
 
-  const pendingRequests = requests.filter(r => r.status === 'pending');
+  const pendingRequests = requests.filter(r => r.status === 'pending'); */
   const todayEvents = events.filter(e => {
     try {
-      const eventDate = parseISO(e.start_time);
-      const today = new Date();
-      return eventDate.toDateString() === today.toDateString();
+      const eventDate = parseISO(e.start_time); */
+      const today = new Date(); */
+      return eventDate.toDateString() === today.toDateString(); */
     } catch {
       return false;
     }
-  });
+  }); */
 
   const stats = [
     {
@@ -137,23 +137,23 @@ export default function Admin() {
 
   const deleteMutation = useMutation({
     mutationFn: async ({ entity, id }) => {
-      await base44.entities[entity].delete(id);
+      await /* base44 removed */entities[entity].delete(id); */
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries([variables.entity.toLowerCase()]);
+      queryClient.invalidateQueries([variables.entity.toLowerCase()]); */
       toast({
         title: "Deleted successfully",
         description: `${variables.entity} has been removed.`,
-      });
+      }); */
     },
-  });
+  }); */
 
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Skeleton className="h-96 rounded-2xl" />
       </div>
-    );
+    ); */
   }
 
   return (
@@ -595,5 +595,5 @@ export default function Admin() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  ); */
 }

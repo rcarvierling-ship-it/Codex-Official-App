@@ -572,7 +572,7 @@ function EventsSection() {
 
 function OfficialsSection() {
   const officials = useDemoStore((state) =>
-    state.users.filter((user) => user.role === "OFFICIAL"),
+    state.users.filter((user) => user.role === "official"),
   );
   const [search, setSearch] = useState("");
 

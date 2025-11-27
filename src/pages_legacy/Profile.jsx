@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+// Legacy file - base44 removed
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,16 +33,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, parseISO } from "date-fns";
 
 export default function Profile() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [user, setUser] = useState(null);
-  const [formData, setFormData] = useState({});
+  const queryClient = useQueryClient(); */
+  const { toast } = useToast(); */
+  const [user, setUser] = useState(null); */
+  const [formData, setFormData] = useState({}); */
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
+        const currentUser = await /* base44 removed */auth.me(); */
+        setUser(currentUser); */
         setFormData({
           phone: currentUser.phone || "",
           bio: currentUser.bio || "",
@@ -55,46 +55,46 @@ export default function Profile() {
           emergency_contact_phone: currentUser.emergency_contact_phone || "",
           sports_qualified: currentUser.sports_qualified || [],
           certifications: currentUser.certifications || [],
-        });
+        }); */
       } catch (error) {
-        base44.auth.redirectToLogin();
+        /* base44 removed */auth.redirectToLogin(); */
       }
     };
-    loadUser();
-  }, []);
+    loadUser(); */
+  }, []); */
 
   const { data: myRequests = [] } = useQuery({
     queryKey: ['my-requests', user?.id],
     queryFn: async () => {
-      const all = await base44.entities.Request.list('-created_date', 100);
-      return all.filter(r => r.official_id === user?.id);
+      const all = await /* base44 removed */entities.Request.list('-created_date', 100); */
+      return all.filter(r => r.official_id === user?.id); */
     },
     enabled: !!user?.id,
-  });
+  }); */
 
   const { data: myAssignments = [] } = useQuery({
     queryKey: ['my-assignments', user?.id],
     queryFn: async () => {
-      const all = await base44.entities.Assignment.list('-created_date', 100);
-      return all.filter(a => a.official_id === user?.id);
+      const all = await /* base44 removed */entities.Assignment.list('-created_date', 100); */
+      return all.filter(a => a.official_id === user?.id); */
     },
     enabled: !!user?.id,
-  });
+  }); */
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data) => base44.auth.updateMe(data),
+    mutationFn: (data) => /* base44 removed */auth.updateMe(data),
     onSuccess: () => {
       toast({
         title: "Profile updated!",
         description: "Your changes have been saved.",
-      });
-      queryClient.invalidateQueries(['user']);
+      }); */
+      queryClient.invalidateQueries(['user']); */
     },
-  });
+  }); */
 
   const handleSave = async (e) => {
-    e.preventDefault();
-    updateProfileMutation.mutate(formData);
+    e.preventDefault(); */
+    updateProfileMutation.mutate(formData); */
   };
 
   const addSport = (sport) => {
@@ -102,7 +102,7 @@ export default function Profile() {
       setFormData({
         ...formData,
         sports_qualified: [...formData.sports_qualified, sport],
-      });
+      }); */
     }
   };
 
@@ -110,7 +110,7 @@ export default function Profile() {
     setFormData({
       ...formData,
       sports_qualified: formData.sports_qualified.filter(s => s !== sport),
-    });
+    }); */
   };
 
   const addCertification = (cert) => {
@@ -118,7 +118,7 @@ export default function Profile() {
       setFormData({
         ...formData,
         certifications: [...formData.certifications, cert],
-      });
+      }); */
     }
   };
 
@@ -126,7 +126,7 @@ export default function Profile() {
     setFormData({
       ...formData,
       certifications: formData.certifications.filter(c => c !== cert),
-    });
+    }); */
   };
 
   const isOfficial = user?.app_role === 'official';
@@ -136,7 +136,7 @@ export default function Profile() {
       <div className="container mx-auto px-4 py-8">
         <Skeleton className="h-96 rounded-2xl" />
       </div>
-    );
+    ); */
   }
 
   const stats = {
@@ -401,8 +401,8 @@ export default function Profile() {
                       className="rounded-xl"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addCertification(e.target.value);
+                          e.preventDefault(); */
+                          addCertification(e.target.value); */
                           e.target.value = '';
                         }
                       }}
@@ -515,5 +515,5 @@ export default function Profile() {
         )}
       </Tabs>
     </div>
-  );
+  ); */
 }

@@ -7,6 +7,12 @@ export type School = {
   name: string;
   slug: string;
   leagueId?: string | null;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+  logoUrl?: string | null;
+  mascotName?: string | null;
+  mascotImageUrl?: string | null;
+  themeJson?: Record<string, unknown> | null;
 };
 
 export type SchoolMembership = {
@@ -28,6 +34,12 @@ function normalizeSchoolRow(row: Record<string, unknown>): School {
     name: String(row.name ?? row.school_name ?? "Unnamed School"),
     slug: String(row.slug ?? row.school_slug ?? slugify(String(row.name ?? "school"))),
     leagueId: (row.league_id as string | null) ?? null,
+    primaryColor: (row.primary_color as string | null) ?? null,
+    secondaryColor: (row.secondary_color as string | null) ?? null,
+    logoUrl: (row.logo_url as string | null) ?? null,
+    mascotName: (row.mascot_name as string | null) ?? null,
+    mascotImageUrl: (row.mascot_image_url as string | null) ?? null,
+    themeJson: (row.theme_json as Record<string, unknown> | null) ?? null,
   };
 }
 
@@ -229,5 +241,37 @@ export async function getUserAccessibleSchoolsAndLeagues(
   } catch (error) {
     console.warn("[schools] getUserAccessibleSchoolsAndLeagues failed", error);
     return { schoolIds: [], leagueIds: [] };
+  }
+}
+
+/**
+ * Update school branding
+ */
+export async function updateSchoolBranding(
+  schoolId: string,
+  branding: {
+    primaryColor?: string | null;
+    secondaryColor?: string | null;
+    logoUrl?: string | null;
+    mascotName?: string | null;
+    mascotImageUrl?: string | null;
+    themeJson?: Record<string, unknown> | null;
+  }
+): Promise<void> {
+  try {
+    await sql`
+      UPDATE schools
+      SET primary_color = ${branding.primaryColor ?? null},
+          secondary_color = ${branding.secondaryColor ?? null},
+          logo_url = ${branding.logoUrl ?? null},
+          mascot_name = ${branding.mascotName ?? null},
+          mascot_image_url = ${branding.mascotImageUrl ?? null},
+          theme_json = ${branding.themeJson ? JSON.stringify(branding.themeJson) : null},
+          updated_at = now()
+      WHERE id = ${schoolId}
+    `;
+  } catch (error) {
+    console.error("[schools] updateSchoolBranding failed", error);
+    throw new Error("Failed to update school branding");
   }
 }

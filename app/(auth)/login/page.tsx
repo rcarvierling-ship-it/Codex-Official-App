@@ -44,7 +44,7 @@ export default function LoginPage() {
               });
               setLoading(false);
               if (res?.ok) {
-                router.push(callbackUrl);
+                router.push(`${callbackUrl}?from=login`);
               } else {
                 setError("Invalid email or password. Please try again.");
               }

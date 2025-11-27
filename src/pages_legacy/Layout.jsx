@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+// Legacy file - base44 removed
 import {
   Home,
   Calendar,
@@ -33,34 +33,34 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
 export default function Layout({ children, currentPageName }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [isPublicPage, setIsPublicPage] = useState(false);
+  const location = useLocation(); */
+  const navigate = useNavigate(); */
+  const [user, setUser] = useState(null); */
+  const [mobileOpen, setMobileOpen] = useState(false); */
+  const [isPublicPage, setIsPublicPage] = useState(false); */
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const isAuth = await base44.auth.isAuthenticated();
+        const isAuth = await /* base44 removed */auth.isAuthenticated(); */
         if (isAuth) {
-          const currentUser = await base44.auth.me();
-          setUser(currentUser);
+          const currentUser = await /* base44 removed */auth.me(); */
+          setUser(currentUser); */
         }
       } catch (error) {
-        console.log("Not authenticated");
+        console.log("Not authenticated"); */
       }
     };
     
-    setIsPublicPage(currentPageName === "Landing");
+    setIsPublicPage(currentPageName === "Landing"); */
     
     if (!isPublicPage) {
-      checkAuth();
+      checkAuth(); */
     }
-  }, [currentPageName]);
+  }, [currentPageName]); */
 
   const handleLogout = async () => {
-    await base44.auth.logout(createPageUrl("Landing"));
+    await /* base44 removed */auth.logout(createPageUrl("Landing")); */
   };
 
   const isAdmin = user?.app_role === 'super_admin' || user?.app_role === 'admin';
@@ -72,14 +72,14 @@ export default function Layout({ children, currentPageName }) {
     { name: "Admin", href: createPageUrl("Admin"), icon: Shield, show: isAdmin },
   ];
 
-  const visibleNav = navigation.filter(item => item.show);
+  const visibleNav = navigation.filter(item => item.show); */
 
   if (isPublicPage) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {children}
       </div>
-    );
+    ); */
   }
 
   return (
@@ -121,7 +121,7 @@ export default function Layout({ children, currentPageName }) {
                     <item.icon className="w-4 h-4" />
                     {item.name}
                   </Link>
-                );
+                ); */
               })}
             </nav>
 
@@ -172,7 +172,7 @@ export default function Layout({ children, currentPageName }) {
                   </DropdownMenu>
                 </>
               ) : (
-                <Button onClick={() => base44.auth.redirectToLogin()} className="bg-[#2FFFCB] text-slate-900 hover:bg-cyan-400">
+                <Button onClick={() => /* base44 removed */auth.redirectToLogin()} className="bg-[#2FFFCB] text-slate-900 hover:bg-cyan-400">
                   Sign In
                 </Button>
               )}
@@ -202,7 +202,7 @@ export default function Layout({ children, currentPageName }) {
                           <item.icon className="w-5 h-5" />
                           {item.name}
                         </Link>
-                      );
+                      ); */
                     })}
                   </nav>
                 </SheetContent>
@@ -242,5 +242,5 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </footer>
     </div>
-  );
+  ); */
 }

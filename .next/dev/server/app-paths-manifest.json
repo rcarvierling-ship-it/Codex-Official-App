@@ -1,5 +1,12 @@
 {
+  "/(app)/dashboard/fan/page": "app/(app)/dashboard/fan/page.js",
+  "/(app)/dashboard/official/page": "app/(app)/dashboard/official/page.js",
   "/(app)/dashboard/page": "app/(app)/dashboard/page.js",
-  "/admin/page": "app/admin/page.js",
-  "/page": "app/page.js"
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/api/register/route": "app/api/register/route.js",
+  "/api/user/contexts/route": "app/api/user/contexts/route.js",
+  "/onboarding/page": "app/onboarding/page.js",
+  "/page": "app/page.js",
+  "/signup/page": "app/signup/page.js"
 }

@@ -57,12 +57,12 @@ export default function SignupPage() {
           return;
         } else {
           // If auto-login fails, still redirect to login page
-          toast({
-            title: "Account created",
+        toast({
+          title: "Account created",
             description: "Please sign in to continue.",
-          });
+        });
           router.push("/login");
-          return;
+        return;
         }
       }
 
@@ -179,7 +179,7 @@ export default function SignupPage() {
             </Link>
           </p>
           <p className="text-center text-xs sm:text-sm text-muted-foreground">
-            By signing up, you agree to our{" "}
+          By signing up, you agree to our{" "}
             <Link
               href="/terms"
               className="text-[hsl(var(--accent))] hover:underline"
@@ -194,16 +194,16 @@ export default function SignupPage() {
               Privacy Policy
             </Link>
             .
-          </p>
+        </p>
           <p className="text-center text-xs sm:text-sm text-muted-foreground">
-            Want a peek first?{" "}
+          Want a peek first?{" "}
             <Link
               href="/demo"
               className="font-semibold text-[hsl(var(--accent))] hover:underline"
             >
-              Explore the demo
-            </Link>
-          </p>
+            Explore the demo
+          </Link>
+        </p>
         </div>
       </div>
     </main>

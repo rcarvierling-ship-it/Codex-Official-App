@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+// Legacy file - base44 removed
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,25 +21,25 @@ export default function Officials() {
   const [filters, setFilters] = useState({
     sport: "all",
     search: "",
-  });
+  }); */
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list('full_name', 100),
-  });
+    queryFn: () => /* base44 removed */entities.User.list('full_name', 100),
+  }); */
 
   const { data: assignments = [] } = useQuery({
     queryKey: ['assignments'],
-    queryFn: () => base44.entities.Assignment.list('-created_date', 200),
-  });
+    queryFn: () => /* base44 removed */entities.Assignment.list('-created_date', 200),
+  }); */
 
   const officials = users.filter(u => 
     u.app_role === 'official' && u.status === 'active'
-  );
+  ); */
 
   const filteredOfficials = officials.filter((official) => {
     if (filters.search) {
-      const search = filters.search.toLowerCase();
+      const search = filters.search.toLowerCase(); */
       if (!official.full_name?.toLowerCase().includes(search) &&
           !official.email?.toLowerCase().includes(search)) {
         return false;
@@ -51,10 +51,10 @@ export default function Officials() {
       }
     }
     return true;
-  });
+  }); */
 
   const getOfficialStats = (officialId) => {
-    const officialAssignments = assignments.filter(a => a.official_id === officialId);
+    const officialAssignments = assignments.filter(a => a.official_id === officialId); */
     return {
       total: officialAssignments.length,
       completed: officialAssignments.filter(a => a.status === 'completed').length,
@@ -121,7 +121,7 @@ export default function Officials() {
           </div>
         ) : (
           filteredOfficials.map((official, index) => {
-            const stats = getOfficialStats(official.id);
+            const stats = getOfficialStats(official.id); */
             
             return (
               <motion.div
@@ -256,10 +256,10 @@ export default function Officials() {
                   </CardContent>
                 </Card>
               </motion.div>
-            );
+            ); */
           })
         )}
       </div>
     </div>
-  );
+  ); */
 }

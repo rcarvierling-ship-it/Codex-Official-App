@@ -23,7 +23,7 @@ async function getLeagues() {
 }
 
 export default async function LeaguesPage() {
-  await requireRole("SUPER_ADMIN");
+  await requireRole("league_admin");
   const leagues = await getLeagues();
 
   return (

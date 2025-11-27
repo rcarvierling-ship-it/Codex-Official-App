@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+// Legacy file - base44 removed
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -23,62 +23,62 @@ import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const navigate = useNavigate(); */
+  const [user, setUser] = useState(null); */
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
+        const currentUser = await /* base44 removed */auth.me(); */
+        setUser(currentUser); */
       } catch (error) {
-        base44.auth.redirectToLogin();
+        /* base44 removed */auth.redirectToLogin(); */
       }
     };
-    loadUser();
-  }, []);
+    loadUser(); */
+  }, []); */
 
   const { data: events = [], isLoading: eventsLoading } = useQuery({
     queryKey: ['events'],
-    queryFn: () => base44.entities.Event.list('-start_time', 50),
-  });
+    queryFn: () => /* base44 removed */entities.Event.list('-start_time', 50),
+  }); */
 
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ['requests', user?.id],
-    queryFn: () => base44.entities.Request.list('-created_date', 50),
+    queryFn: () => /* base44 removed */entities.Request.list('-created_date', 50),
     enabled: !!user,
-  });
+  }); */
 
   const { data: assignments = [], isLoading: assignmentsLoading } = useQuery({
     queryKey: ['assignments', user?.id],
-    queryFn: () => base44.entities.Assignment.list('-created_date', 50),
+    queryFn: () => /* base44 removed */entities.Assignment.list('-created_date', 50),
     enabled: !!user,
-  });
+  }); */
 
   const { data: announcements = [] } = useQuery({
     queryKey: ['announcements'],
-    queryFn: () => base44.entities.Announcement.filter({ status: 'published' }, '-created_date', 5),
-  });
+    queryFn: () => /* base44 removed */entities.Announcement.filter({ status: 'published' }, '-created_date', 5),
+  }); */
 
   const isOfficial = user?.app_role === 'official';
   const isAdmin = user?.app_role === 'super_admin' || user?.app_role === 'admin';
   const isAD = user?.app_role === 'athletic_director';
 
   // Filter user-specific data
-  const myRequests = requests.filter(r => r.official_id === user?.id);
-  const myAssignments = assignments.filter(a => a.official_id === user?.id);
-  const pendingRequests = requests.filter(r => r.status === 'pending');
-  const myPendingRequests = myRequests.filter(r => r.status === 'pending');
+  const myRequests = requests.filter(r => r.official_id === user?.id); */
+  const myAssignments = assignments.filter(a => a.official_id === user?.id); */
+  const pendingRequests = requests.filter(r => r.status === 'pending'); */
+  const myPendingRequests = myRequests.filter(r => r.status === 'pending'); */
 
   // Today's events
   const upcomingEvents = events
     .filter(e => {
-      const eventDate = parseISO(e.start_time);
-      return isAfter(eventDate, new Date());
+      const eventDate = parseISO(e.start_time); */
+      return isAfter(eventDate, new Date()); */
     })
-    .slice(0, 5);
+    .slice(0, 5); */
 
-  const todaysEvents = events.filter(e => isToday(parseISO(e.start_time)));
+  const todaysEvents = events.filter(e => isToday(parseISO(e.start_time))); */
 
   const stats = [
     {
@@ -112,10 +112,10 @@ export default function Dashboard() {
   ];
 
   const getEventTimeLabel = (startTime) => {
-    const date = parseISO(startTime);
+    const date = parseISO(startTime); */
     if (isToday(date)) return "Today";
     if (isTomorrow(date)) return "Tomorrow";
-    return format(date, "MMM d");
+    return format(date, "MMM d"); */
   };
 
   if (!user) {
@@ -127,7 +127,7 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
-    );
+    ); */
   }
 
   return (
@@ -335,5 +335,5 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
-  );
+  ); */
 }

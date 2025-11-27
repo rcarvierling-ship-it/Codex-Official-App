@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  await requireRole("ADMIN");
+  await requireRole("league_admin");
 
   return (
     <div className="space-y-6">

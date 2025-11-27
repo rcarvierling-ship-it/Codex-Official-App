@@ -14,7 +14,7 @@ export default async function OfficialsPage() {
   const canSeeAll = user?.canSeeAll ?? false;
   const accessibleSchools = user?.accessibleSchools ?? [];
   const users = await getUsers();
-  const officials = users.filter((u) => u.role === "OFFICIAL" || u.role === null);
+  const officials = users.filter((u) => u.role === "official" || u.role === null);
   const scopedOfficials = canSeeAll
     ? officials
     : officials.filter((official) =>

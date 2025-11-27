@@ -24,7 +24,7 @@ async function getVenues() {
 }
 
 export default async function AdminVenuesPage() {
-  await requireRole("SUPER_ADMIN");
+  await requireRole("league_admin");
   const venues = await getVenues();
 
   return (

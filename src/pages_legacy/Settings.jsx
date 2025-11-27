@@ -26,5 +26,5 @@ export default function Settings() {
         </CardContent>
       </Card>
     </div>
-  );
+  ); */
 }
