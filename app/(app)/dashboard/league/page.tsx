@@ -6,6 +6,7 @@ import { getUsers } from "@/lib/repos/users";
 import { getRequests } from "@/lib/repos/requests";
 import { getAssignments } from "@/lib/repos/assignments";
 import { sql } from "@/lib/db";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "League Dashboard" };
 export const runtime = "nodejs";
@@ -41,7 +42,7 @@ export default async function LeagueDashboardPage() {
     redirect("/dashboard");
   }
 
-  const user = session.user as any;
+  const user = session.user as SessionUser;
   const canSeeAll = user?.canSeeAll ?? false;
   const accessibleSchools = user?.accessibleSchools ?? [];
   const accessibleLeagues = user?.accessibleLeagues ?? [];

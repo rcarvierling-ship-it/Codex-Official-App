@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Official Dashboard" };
 export const runtime = "nodejs";
@@ -22,11 +23,11 @@ export default async function OfficialDashboardPage() {
     redirect("/dashboard");
   }
 
-  const user = session.user as any;
-  const currentUserId = user?.id;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
-  const accessibleLeagues = user?.accessibleLeagues ?? [];
+  const user = session.user as SessionUser;
+  const currentUserId = user.id;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
+  const accessibleLeagues = user.accessibleLeagues ?? [];
 
   const [assignments, events, users] = await Promise.all([
     getAssignments(),

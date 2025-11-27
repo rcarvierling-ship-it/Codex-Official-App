@@ -8,6 +8,7 @@ import { getGameChangeRequests } from "@/lib/repos/game-change-requests";
 import { getSchoolById } from "@/lib/repos/schools";
 import { sql } from "@/lib/db";
 import { CoachDashboardClient } from "../CoachDashboardClient";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Coach Dashboard" };
 export const runtime = "nodejs";
@@ -43,11 +44,11 @@ export default async function CoachDashboardPage() {
     redirect("/dashboard");
   }
 
-  const user = session.user as any;
-  const currentUserId = user?.id;
-  const activeSchoolId = user?.schoolId ?? null;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
+  const user = session.user as SessionUser;
+  const currentUserId = user.id;
+  const activeSchoolId = user.schoolId ?? null;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
   const accessibleLeagues = user?.accessibleLeagues ?? [];
 
   const filterBy = canSeeAll

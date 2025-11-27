@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "School Dashboard" };
 export const runtime = "nodejs";
@@ -47,12 +48,12 @@ export default async function SchoolDashboardPage() {
     redirect("/dashboard");
   }
 
-  const user = session.user as any;
-  const currentUserId = user?.id;
-  const activeSchoolId = user?.schoolId ?? null;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
-  const accessibleLeagues = user?.accessibleLeagues ?? [];
+  const user = session.user as SessionUser;
+  const currentUserId = user.id;
+  const activeSchoolId = user.schoolId ?? null;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
+  const accessibleLeagues = user.accessibleLeagues ?? [];
 
   const filterBy = canSeeAll
     ? null
