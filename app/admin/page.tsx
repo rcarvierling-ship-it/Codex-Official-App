@@ -63,14 +63,16 @@ async function getTeams(schoolIds: string[]) {
   }
 }
 
+import type { SessionUser } from "@/lib/types/auth";
+
 export default async function AdminPage() {
   const { role, session } = await requireRole("league_admin");
-  const user = session.user as any;
-  const activeSchoolId = user?.schoolId ?? null;
-  const activeSchoolName = user?.school?.name ?? "";
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
-  const accessibleLeagues = user?.accessibleLeagues ?? [];
+  const user = session.user as SessionUser;
+  const activeSchoolId = user.schoolId ?? null;
+  const activeSchoolName = user.school?.name ?? "";
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
+  const accessibleLeagues = user.accessibleLeagues ?? [];
 
   const filterBy = canSeeAll
     ? null

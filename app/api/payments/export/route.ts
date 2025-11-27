@@ -4,6 +4,7 @@ import { getPayments } from "@/lib/repos/payments";
 import { getUsers } from "@/lib/repos/users";
 import { getEvents } from "@/lib/repos/events";
 import { format } from "date-fns";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,12 +16,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const user = session.user as any;
-    const canSeeAll = user?.canSeeAll ?? false;
-    const accessibleSchools = user?.accessibleSchools ?? [];
+    const user = session.user as SessionUser;
+    const canSeeAll = user.canSeeAll ?? false;
+    const accessibleSchools = user.accessibleSchools ?? [];
 
     // Only ADs and Admins can export
-    if (user?.role !== "athletic_director" && user?.role !== "league_admin") {
+    if (user.role !== "athletic_director" && user.role !== "league_admin") {
       return NextResponse.json(
         { message: "Only Athletic Directors and Admins can export payments." },
         { status: 403 }

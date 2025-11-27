@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionServer } from "@/lib/auth";
 import { getUserContexts } from "@/lib/repos/user-contexts";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,8 +13,8 @@ export async function GET() {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const user = session.user as any;
-    const userId = user?.id;
+    const user = session.user as SessionUser;
+    const userId = user.id;
     if (!userId) {
       return NextResponse.json(
         { message: "User ID not found in session." },

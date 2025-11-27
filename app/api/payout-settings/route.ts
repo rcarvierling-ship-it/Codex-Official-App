@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionServer } from "@/lib/auth";
 import { getPayoutSettings, updatePayoutSettings } from "@/lib/repos/payments";
 import { revalidatePath } from "next/cache";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,9 +14,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const user = session.user as any;
+    const user = session.user as SessionUser;
     // Only Admins can view payout settings
-    if (user?.role !== "league_admin") {
+    if (user.role !== "league_admin") {
       return NextResponse.json(
         { message: "Only Admins can view payout settings." },
         { status: 403 }
@@ -48,9 +49,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const user = session.user as any;
+    const user = session.user as SessionUser;
     // Only Admins can update payout settings
-    if (user?.role !== "league_admin") {
+    if (user.role !== "league_admin") {
       return NextResponse.json(
         { message: "Only Admins can update payout settings." },
         { status: 403 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionServer } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,8 +20,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const userId = (session.user as any)?.id;
-    const email = (session.user as any)?.email;
+    const user = session.user as SessionUser;
+    const userId = user.id;
+    const email = user.email;
 
     if (!userId && !email) {
       return NextResponse.json(
@@ -121,8 +123,9 @@ export async function GET() {
       );
     }
 
-    const userId = (session.user as any)?.id;
-    const email = (session.user as any)?.email;
+    const user = session.user as SessionUser;
+    const userId = user.id;
+    const email = user.email;
 
     if (!userId && !email) {
       return NextResponse.json({ completed: false });

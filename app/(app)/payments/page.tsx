@@ -4,6 +4,7 @@ import { getUsers } from "@/lib/repos/users";
 import { getEvents } from "@/lib/repos/events";
 import { getPayoutSettings } from "@/lib/repos/payments";
 import { PaymentsDashboardClient } from "./PaymentsDashboardClient";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Payments" };
 export const runtime = "nodejs";
@@ -12,11 +13,11 @@ export const dynamic = "force-dynamic";
 export default async function PaymentsPage() {
   const session = await requireAuth();
   const role = await getAuthRole();
-  const user = session.user as any;
-  const currentUserId = user?.id;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
-  const accessibleLeagues = user?.accessibleLeagues ?? [];
+  const user = session.user as SessionUser;
+  const currentUserId = user.id;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
+  const accessibleLeagues = user.accessibleLeagues ?? [];
 
   const filterBy = canSeeAll
     ? null

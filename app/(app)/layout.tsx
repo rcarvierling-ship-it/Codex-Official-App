@@ -7,6 +7,7 @@ import { SessionProviderWrapper } from "@/components/app/SessionProviderWrapper"
 import { SchoolThemeProvider } from "@/components/branding/SchoolThemeProvider";
 import { getSchoolById } from "@/lib/repos/schools";
 import { SplashProvider, type SchoolBranding } from "@/components/splash/SplashProvider";
+import type { SessionUser } from "@/lib/types/auth";
 
 export default async function AppLayout({
   children,
@@ -21,9 +22,9 @@ export default async function AppLayout({
   }
 
   const role = await getAuthRole();
-  const user = session.user as any;
-  const schoolId = user?.schoolId;
-  const leagueId = user?.leagueId;
+  const user = session.user as SessionUser;
+  const schoolId = user.schoolId;
+  const leagueId = user.leagueId;
 
   // Get school branding if user has a school
   let schoolBranding: SchoolBranding = null;

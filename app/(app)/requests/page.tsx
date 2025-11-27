@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Requests" };
 export const runtime = "nodejs";
@@ -15,10 +16,10 @@ export const dynamic = "force-dynamic";
 
 export default async function RequestsPage() {
   const session = await requireAuth();
-  const user = session.user as any;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
-  const accessibleLeagues = user?.accessibleLeagues ?? [];
+  const user = session.user as SessionUser;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
+  const accessibleLeagues = user.accessibleLeagues ?? [];
 
   const filterBy = canSeeAll
     ? null

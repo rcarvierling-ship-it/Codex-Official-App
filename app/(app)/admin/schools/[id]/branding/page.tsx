@@ -3,6 +3,7 @@ import { getSchoolById } from "@/lib/repos/schools";
 import { notFound } from "next/navigation";
 import { BrandingManager } from "@/components/branding/BrandingManager";
 import { Card, CardContent } from "@/components/ui/card";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "School Branding" };
 export const runtime = "nodejs";
@@ -15,7 +16,7 @@ export default async function SchoolBrandingPage({
 }) {
   const session = await requireAuth();
   const role = await getAuthRole();
-  const user = session.user as any;
+  const user = session.user as SessionUser;
   const { id } = params;
 
   // Only athletic_director, school_admin, or league_admin can access

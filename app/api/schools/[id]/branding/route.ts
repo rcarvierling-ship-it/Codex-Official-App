@@ -3,6 +3,7 @@ import { getSessionServer } from "@/lib/auth";
 import { requireAuth, getAuthRole } from "@/lib/auth-helpers";
 import { updateSchoolBranding, getSchoolById } from "@/lib/repos/schools";
 import { revalidatePath } from "next/cache";
+import type { SessionUser } from "@/lib/types/auth";
 
 export async function PATCH(
   request: Request,
@@ -11,7 +12,7 @@ export async function PATCH(
   try {
     const session = await requireAuth();
     const role = await getAuthRole();
-    const user = session.user as any;
+    const user = session.user as SessionUser;
     
     // Only AD, ADMIN, or SUPER_ADMIN can update branding
     if (role !== "athletic_director" && role !== "league_admin") {

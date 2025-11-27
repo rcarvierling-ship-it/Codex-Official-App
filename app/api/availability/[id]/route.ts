@@ -6,6 +6,7 @@ import {
   getAvailabilityBlocks,
 } from "@/lib/repos/availability";
 import { revalidatePath } from "next/cache";
+import type { SessionUser } from "@/lib/types/auth";
 
 export async function PATCH(
   request: Request,
@@ -20,7 +21,8 @@ export async function PATCH(
       );
     }
 
-    const userId = (session.user as any)?.id;
+    const user = session.user as SessionUser;
+    const userId = user.id;
     if (!userId) {
       return NextResponse.json(
         { message: "User ID not found in session." },
@@ -105,7 +107,8 @@ export async function DELETE(
       );
     }
 
-    const userId = (session.user as any)?.id;
+    const user = session.user as SessionUser;
+    const userId = user.id;
     if (!userId) {
       return NextResponse.json(
         { message: "User ID not found in session." },

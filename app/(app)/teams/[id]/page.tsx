@@ -9,6 +9,7 @@ import { getTeamStanding } from "@/lib/repos/standings";
 import { StandingsTable } from "@/components/standings/StandingsTable";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Team Details" };
 export const runtime = "nodejs";
@@ -47,9 +48,9 @@ export default async function TeamDetailPage({
   params: { id: string };
 }) {
   const session = await requireAuth();
-  const user = session.user as any;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
+  const user = session.user as SessionUser;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
   const { id } = params;
 
   const [team, users] = await Promise.all([
@@ -134,7 +135,7 @@ export default async function TeamDetailPage({
       <ChatThread
         entityType="TEAM"
         entityId={id}
-        currentUserId={(session.user as any)?.id || ""}
+        currentUserId={user.id || ""}
         users={userMap}
       />
     </div>

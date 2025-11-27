@@ -6,6 +6,7 @@ import { getGameChangeRequests } from "@/lib/repos/game-change-requests";
 import { requireRole } from "@/lib/auth-helpers";
 import { sql } from "@/lib/db";
 import { ADDashboardClient } from "./ADDashboardClient";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Athletic Director Dashboard" };
 export const runtime = "nodejs";
@@ -34,10 +35,10 @@ async function getTeams(schoolIds: string[]) {
 
 export default async function ApprovalsPage() {
   const { session } = await requireRole("athletic_director");
-  const user = session.user as any;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
-  const accessibleLeagues = user?.accessibleLeagues ?? [];
+  const user = session.user as SessionUser;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
+  const accessibleLeagues = user.accessibleLeagues ?? [];
 
   const filterBy = canSeeAll
     ? null

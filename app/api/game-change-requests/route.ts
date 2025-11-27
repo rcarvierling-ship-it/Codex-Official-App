@@ -6,6 +6,7 @@ import {
   type ChangeType,
 } from "@/lib/repos/game-change-requests";
 import { revalidatePath } from "next/cache";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,11 +18,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const user = session.user as any;
-    const userId = user?.id;
-    const role = user?.role;
-    const accessibleSchools = user?.accessibleSchools ?? [];
-    const canSeeAll = user?.canSeeAll ?? false;
+    const user = session.user as SessionUser;
+    const userId = user.id;
+    const role = user.role;
+    const accessibleSchools = user.accessibleSchools ?? [];
+    const canSeeAll = user.canSeeAll ?? false;
 
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");
@@ -59,9 +60,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const user = session.user as any;
-    const userId = user?.id;
-    const role = user?.role;
+    const user = session.user as SessionUser;
+    const userId = user.id;
+    const role = user.role;
 
     // Only coaches can create change requests
     if (role !== "coach") {

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { sql } from "@/lib/db";
 import { getEvents } from "@/lib/repos/events";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Venues" };
 export const runtime = "nodejs";
@@ -26,10 +27,10 @@ async function getVenues() {
 
 export default async function VenuesPage() {
   const session = await requireAuth();
-  const user = session.user as any;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
-  const accessibleLeagues = user?.accessibleLeagues ?? [];
+  const user = session.user as SessionUser;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
+  const accessibleLeagues = user.accessibleLeagues ?? [];
 
   const filterBy = canSeeAll
     ? null

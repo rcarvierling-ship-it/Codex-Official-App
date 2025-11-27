@@ -9,6 +9,7 @@ import { ChatThread } from "@/components/chat/ChatThread";
 import { requireAuth } from "@/lib/auth-helpers";
 import Link from "next/link";
 import { Palette } from "lucide-react";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "School Details" };
 export const runtime = "nodejs";
@@ -21,6 +22,7 @@ export default async function SchoolDetailPage({
 }) {
   const { session } = await requireRole("league_admin");
   const { id } = params;
+  const user = session.user as SessionUser;
 
   const [school, users] = await Promise.all([
     getSchoolById(id),
@@ -77,7 +79,7 @@ export default async function SchoolDetailPage({
       <ChatThread
         entityType="SCHOOL"
         entityId={id}
-        currentUserId={(session.user as any)?.id || ""}
+        currentUserId={user.id || ""}
         users={userMap}
       />
     </div>

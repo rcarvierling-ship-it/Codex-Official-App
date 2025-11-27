@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { sql } from "@/lib/db";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Announcements" };
 export const runtime = "nodejs";
@@ -27,7 +28,8 @@ async function getAnnouncements() {
 
 export default async function AnnouncementsPage() {
   const session = await requireAuth();
-  const activeLeagueId = (session.user as any)?.school?.leagueId ?? null;
+  const user = session.user as SessionUser;
+  const activeLeagueId = user.school?.leagueId ?? null;
   const announcements = await getAnnouncements();
   const scopedAnnouncements =
     activeLeagueId ?

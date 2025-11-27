@@ -11,6 +11,7 @@ import { OwnerPageClient } from "./OwnerPageClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Owner Dashboard" };
 export const runtime = "nodejs";
@@ -52,7 +53,7 @@ export default async function OwnerPage() {
               {session && (
                 <div className="mt-4 p-3 bg-muted rounded">
                   <p className="text-xs text-muted-foreground">Current logged in email:</p>
-                  <p className="text-sm font-medium">{(session.user as any)?.email || "Not available"}</p>
+                  <p className="text-sm font-medium">{(session.user as SessionUser)?.email || "Not available"}</p>
                 </div>
               )}
             </div>
@@ -65,7 +66,7 @@ export default async function OwnerPage() {
     );
   }
 
-  const user = session.user as any;
+  const user = session.user as SessionUser;
 
   // Fetch database statistics and table information
   let dbStats = {

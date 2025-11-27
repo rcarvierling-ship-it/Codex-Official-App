@@ -17,6 +17,7 @@ export interface SessionUser {
     mascotImageUrl?: string | null;
     primaryColor?: string | null;
     secondaryColor?: string | null;
+    leagueId?: string | null;
   } | null;
   leagueId?: string | null;
   league?: {

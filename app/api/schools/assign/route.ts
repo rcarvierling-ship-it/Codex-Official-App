@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionServer } from "@/lib/auth";
 import { assignUserToSchool, getSchoolById } from "@/lib/repos/schools";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const runtime = "nodejs";
 
@@ -24,7 +25,8 @@ export async function POST(request: Request) {
     await assignUserToSchool(session.user.email, school.id);
     
     // Mark onboarding as completed
-    const userId = (session.user as any)?.id;
+    const user = session.user as SessionUser;
+    const userId = user.id;
     try {
       const { sql } = await import("@/lib/db");
       if (userId) {
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
     // Also check the new context system
     if (!verified) {
       try {
-        const userId = (session.user as any)?.id;
+        const userId = user.id;
         if (userId) {
           const { getActiveUserContext } = await import("@/lib/repos/user-contexts");
           const context = await getActiveUserContext(userId);

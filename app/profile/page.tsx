@@ -2,6 +2,8 @@ import { requireAuth } from "@/lib/auth-helpers";
 import { getUsers } from "@/lib/repos/users";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { normalizeRole } from "@/lib/nav";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Profile" };
 export const runtime = "nodejs";
@@ -22,7 +24,8 @@ export default async function ProfilePage() {
 
   const users = await getUsers();
   const user = users.find((u) => u.email === email) ?? users[0];
-  const role = (session.user as any)?.role ?? user?.role ?? "USER";
+  const sessionUser = session.user as SessionUser;
+  const role = normalizeRole(sessionUser.role ?? user?.role ?? "fan");
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 sm:gap-6 px-4 py-8 sm:px-6 sm:py-12 md:py-16">

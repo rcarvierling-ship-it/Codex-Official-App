@@ -3,6 +3,7 @@ import { getUserContexts } from "@/lib/repos/user-contexts";
 import { listSchools } from "@/lib/repos/schools";
 import { sql } from "@/lib/db";
 import { ContextManagerClient } from "./ContextManagerClient";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Manage Roles & Schools" };
 export const runtime = "nodejs";
@@ -27,7 +28,8 @@ async function getLeagues() {
 
 export default async function ContextsPage() {
   const session = await requireAuth({ requireSchool: false });
-  const userId = (session.user as any)?.id;
+  const user = session.user as SessionUser;
+  const userId = user.id;
 
   if (!userId) {
     return (

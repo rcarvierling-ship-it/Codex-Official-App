@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireAuth, getAuthRole } from "@/lib/auth-helpers";
 import { getUserSchool, listSchools } from "@/lib/repos/schools";
 import { SchoolOnboardingForm } from "./SchoolOnboardingForm";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = {
   title: "Choose Your School",
@@ -19,10 +20,11 @@ function getRedirectPath(role: string): string {
 
 export default async function OnboardingPage() {
   const session = await requireAuth({ requireSchool: false });
-  const email = (session.user as any)?.email;
-  const userId = (session.user as any)?.id;
+  const user = session.user as SessionUser;
+  const email = user.email;
+  const userId = user.id;
   if (!email) {
-    redirect("/(auth)/login");
+    redirect("/login");
   }
 
   // Check if user has completed onboarding
@@ -31,7 +33,7 @@ export default async function OnboardingPage() {
   
   if (completed) {
     // User has completed onboarding, redirect to their role dashboard
-    const sessionRole = (session.user as any)?.role;
+    const sessionRole = user.role;
     const userRole = await getUserRole(userId, sessionRole);
     const redirectPath = getRedirectPath(userRole);
     redirect(redirectPath);

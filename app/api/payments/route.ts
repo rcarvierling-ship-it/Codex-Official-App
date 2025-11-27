@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionServer } from "@/lib/auth";
 import { getPayments, approvePayment, markPaymentAsPaid } from "@/lib/repos/payments";
 import { revalidatePath } from "next/cache";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,12 +19,12 @@ export async function GET(request: Request) {
     const status = searchParams.get("status") as any;
     const schoolIdsParam = searchParams.get("schoolIds");
 
-    const user = session.user as any;
-    const canSeeAll = user?.canSeeAll ?? false;
-    const accessibleSchools = user?.accessibleSchools ?? [];
+    const user = session.user as SessionUser;
+    const canSeeAll = user.canSeeAll ?? false;
+    const accessibleSchools = user.accessibleSchools ?? [];
 
     // Officials can only see their own payments
-    const effectiveUserId = user?.role === "official" ? (user?.id || userId) : userId || undefined;
+    const effectiveUserId = user.role === "official" ? (user.id || userId || undefined) : (userId || undefined);
     
     // ADs and Admins can see payments for their schools
     const schoolIds = schoolIdsParam 
@@ -48,8 +49,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const user = session.user as any;
-    const userId = user?.id;
+    const user = session.user as SessionUser;
+    const userId = user.id;
     if (!userId) {
       return NextResponse.json(
         { message: "User ID not found in session." },

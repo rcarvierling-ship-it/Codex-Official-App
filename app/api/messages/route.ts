@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionServer } from "@/lib/auth";
 import { getMessages, createMessage } from "@/lib/repos/messages";
 import { revalidatePath } from "next/cache";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,9 +51,10 @@ export async function POST(request: Request) {
     }
 
     // Get user ID from session or look it up by email
-    let userId = (session.user as any)?.id;
+    const user = session.user as SessionUser;
+    let userId = user.id;
     if (!userId) {
-      const email = (session.user as any)?.email;
+      const email = user.email;
       if (!email) {
         return NextResponse.json(
           { message: "User ID not found in session." },

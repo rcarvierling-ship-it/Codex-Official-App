@@ -5,6 +5,7 @@ import { getRequests } from "@/lib/repos/requests";
 import { getAvailabilityBlocks, isOfficialAvailable } from "@/lib/repos/availability";
 import { getAuthRole, requireAuth } from "@/lib/auth-helpers";
 import { OfficialDashboardClient } from "./OfficialDashboardClient";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Official Dashboard" };
 export const runtime = "nodejs";
@@ -13,11 +14,11 @@ export const dynamic = "force-dynamic";
 export default async function AssignmentsPage() {
   const session = await requireAuth();
   const role = await getAuthRole();
-  const user = session.user as any;
-  const currentUserId = user?.id;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
-  const accessibleLeagues = user?.accessibleLeagues ?? [];
+  const user = session.user as SessionUser;
+  const currentUserId = user.id;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
+  const accessibleLeagues = user.accessibleLeagues ?? [];
 
   const filterBy = canSeeAll
     ? null

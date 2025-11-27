@@ -5,6 +5,7 @@ import { getAssignments } from "@/lib/repos/assignments";
 import { getUsers } from "@/lib/repos/users";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, subDays, startOfDay } from "date-fns";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Analytics" };
 export const runtime = "nodejs";
@@ -12,10 +13,10 @@ export const dynamic = "force-dynamic";
 
 export default async function AnalyticsPage() {
   const { session } = await requireRole("league_admin");
-  const user = session.user as any;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
-  const accessibleLeagues = user?.accessibleLeagues ?? [];
+  const user = session.user as SessionUser;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
+  const accessibleLeagues = user.accessibleLeagues ?? [];
 
   const filterBy = canSeeAll
     ? null

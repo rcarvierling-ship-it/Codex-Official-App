@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth-helpers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Officials Directory" };
 export const runtime = "nodejs";
@@ -10,9 +11,9 @@ export const dynamic = "force-dynamic";
 
 export default async function OfficialsPage() {
   const session = await requireAuth();
-  const user = session.user as any;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
+  const user = session.user as SessionUser;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
   const users = await getUsers();
   const officials = users.filter((u) => u.role === "official" || u.role === null);
   const scopedOfficials = canSeeAll

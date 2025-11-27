@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import { ChatThread } from "@/components/chat/ChatThread";
 import { EventDetailClient } from "./EventDetailClient";
 import { sql } from "@/lib/db";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Event Details" };
 export const runtime = "nodejs";
@@ -20,10 +21,10 @@ export default async function EventDetailPage({
   params: { id: string };
 }) {
   const session = await requireAuth();
-  const user = session.user as any;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
-  const accessibleLeagues = user?.accessibleLeagues ?? [];
+  const user = session.user as SessionUser;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
+  const accessibleLeagues = user.accessibleLeagues ?? [];
   const { id } = params;
 
   const filterBy = canSeeAll
@@ -31,7 +32,7 @@ export default async function EventDetailPage({
     : { schoolIds: accessibleSchools, leagueIds: accessibleLeagues };
 
   const role = await getAuthRole();
-  const currentUserId = (session.user as any)?.id || "";
+  const currentUserId = user.id || "";
 
   const [events, requests, assignments, users, changeRequests, gameResult] = await Promise.all([
     getEvents(filterBy),

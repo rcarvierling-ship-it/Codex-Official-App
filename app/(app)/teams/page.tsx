@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { sql } from "@/lib/db";
 import Link from "next/link";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const metadata = { title: "Teams" };
 export const runtime = "nodejs";
@@ -26,9 +27,9 @@ async function getTeams() {
 
 export default async function TeamsPage() {
   const session = await requireAuth();
-  const user = session.user as any;
-  const canSeeAll = user?.canSeeAll ?? false;
-  const accessibleSchools = user?.accessibleSchools ?? [];
+  const user = session.user as SessionUser;
+  const canSeeAll = user.canSeeAll ?? false;
+  const accessibleSchools = user.accessibleSchools ?? [];
   const teams = await getTeams();
   const scopedTeams = canSeeAll
     ? teams

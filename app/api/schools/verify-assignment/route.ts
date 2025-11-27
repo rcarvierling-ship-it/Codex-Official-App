@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionServer } from "@/lib/auth";
 import { getUserSchool } from "@/lib/repos/schools";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +20,8 @@ export async function GET() {
     }
 
     // Also check the new context system
-    const userId = (session.user as any)?.id;
+    const user = session.user as SessionUser;
+    const userId = user.id;
     if (userId) {
       try {
         const { getActiveUserContext } = await import("@/lib/repos/user-contexts");

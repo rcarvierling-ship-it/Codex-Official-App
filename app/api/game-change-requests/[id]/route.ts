@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionServer } from "@/lib/auth";
 import { updateGameChangeRequestStatus, type ChangeRequestStatus } from "@/lib/repos/game-change-requests";
 import { revalidatePath } from "next/cache";
+import type { SessionUser } from "@/lib/types/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,9 +17,9 @@ export async function PATCH(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const user = session.user as any;
-    const userId = user?.id;
-    const role = user?.role;
+    const user = session.user as SessionUser;
+    const userId = user.id;
+    const role = user.role;
 
     // Only ADs and admins can approve/deny
     if (role !== "athletic_director" && role !== "league_admin") {
