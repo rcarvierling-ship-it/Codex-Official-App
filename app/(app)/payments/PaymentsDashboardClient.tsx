@@ -230,7 +230,7 @@ export function PaymentsDashboardClient({
         </div>
         {!isOfficial && (
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button onClick={handleExport} variant="outline" className="gap-2">
+            <Button type="button" onClick={handleExport} variant="outline" className="gap-2">
               <Download className="h-4 w-4" />
               Export CSV
             </Button>
@@ -339,6 +339,7 @@ export function PaymentsDashboardClient({
                 </p>
               </div>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setShowSettings(!showSettings)}
@@ -375,7 +376,7 @@ export function PaymentsDashboardClient({
                     Auto-approve payments
                   </Label>
                 </div>
-                <Button onClick={handleSaveSettings} className="w-full">
+                <Button type="button" onClick={handleSaveSettings} className="w-full">
                   Save Settings
                 </Button>
               </CardContent>
@@ -454,6 +455,7 @@ export function PaymentsDashboardClient({
                             <div className="flex gap-2">
                               {payment.status === "PENDING" && (
                                 <Button
+                                  type="button"
                                   size="sm"
                                   onClick={() => handleApprove(payment.id)}
                                   disabled={isProcessing === payment.id}
@@ -463,6 +465,7 @@ export function PaymentsDashboardClient({
                               )}
                               {payment.status === "APPROVED" && (
                                 <Button
+                                  type="button"
                                   size="sm"
                                   variant="default"
                                   onClick={() => handleMarkPaid(payment.id)}

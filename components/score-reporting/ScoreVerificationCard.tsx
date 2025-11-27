@@ -212,6 +212,7 @@ export function ScoreVerificationCard({
               className="flex-1"
             >
               <Button
+                type="button"
                 onClick={handleVerify}
                 disabled={isVerifying}
                 className="w-full"
@@ -229,6 +230,7 @@ export function ScoreVerificationCard({
             >
               {isLocked ? (
                 <Button
+                  type="button"
                   onClick={handleUnlock}
                   disabled={isLocking}
                   variant="outline"
@@ -239,6 +241,7 @@ export function ScoreVerificationCard({
                 </Button>
               ) : (
                 <Button
+                  type="button"
                   onClick={handleLock}
                   disabled={isLocking || !isVerified}
                   className="w-full"

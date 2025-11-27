@@ -194,7 +194,7 @@ export function ContextManagerClient({
           </p>
         </div>
         {!showAddForm && (
-          <Button onClick={() => setShowAddForm(true)} className="gap-2">
+          <Button type="button" onClick={() => setShowAddForm(true)} className="gap-2">
             <Plus className="h-4 w-4" />
             Add Role/Organization
           </Button>
@@ -208,6 +208,7 @@ export function ContextManagerClient({
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-lg">Add New Role & Organization</CardTitle>
               <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => {
@@ -286,6 +287,7 @@ export function ContextManagerClient({
 
               <div className="flex gap-2">
                 <Button
+                  type="button"
                   onClick={handleAddContext}
                   disabled={isSubmitting}
                   className="flex-1"
@@ -293,6 +295,7 @@ export function ContextManagerClient({
                   {isSubmitting ? "Adding..." : "Add Context"}
                 </Button>
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={() => {
                     setShowAddForm(false);
@@ -375,6 +378,7 @@ export function ContextManagerClient({
                       </p>
                       {!context.isActive && (
                         <Button
+                          type="button"
                           size="sm"
                           onClick={() => handleSwitchContext(context.id)}
                           className="w-full"

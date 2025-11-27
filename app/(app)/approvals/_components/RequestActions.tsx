@@ -8,6 +8,7 @@ export function ApproveRequestButton({ requestId }: { requestId: string }) {
   const router = useRouter();
   return (
     <Button
+      type="button"
       className="bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
       onClick={async () => {
         await updateRequestStatus(requestId, "APPROVED");
@@ -23,6 +24,7 @@ export function DeclineRequestButton({ requestId }: { requestId: string }) {
   const router = useRouter();
   return (
     <Button
+      type="button"
       variant="outline"
       className="border-red-500/40 text-red-300 hover:bg-red-500/10"
       onClick={async () => {

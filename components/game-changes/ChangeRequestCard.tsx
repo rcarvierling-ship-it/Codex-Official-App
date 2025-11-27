@@ -174,6 +174,7 @@ export function ChangeRequestCard({
           {showActions && request.status === "PENDING" && (
             <div className="flex gap-2 pt-2">
               <Button
+                type="button"
                 size="sm"
                 onClick={handleApprove}
                 className="flex-1 gap-2"
@@ -182,6 +183,7 @@ export function ChangeRequestCard({
                 Approve
               </Button>
               <Button
+                type="button"
                 size="sm"
                 variant="destructive"
                 onClick={handleDeny}

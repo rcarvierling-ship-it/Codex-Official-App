@@ -184,6 +184,7 @@ export function EventDetailClient({
             <CardTitle className="text-lg">Game Change Requests</CardTitle>
             {!showChangeForm && (
               <Button
+                type="button"
                 size="sm"
                 onClick={() => setShowChangeForm(true)}
                 className="gap-2"

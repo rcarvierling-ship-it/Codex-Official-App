@@ -224,6 +224,7 @@ export function ScoreSubmissionForm({
             )}
 
             <Button
+              type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
               className="w-full"
