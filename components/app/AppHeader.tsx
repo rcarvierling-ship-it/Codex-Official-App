@@ -42,7 +42,7 @@ type UserContext = {
 
 export function AppHeader() {
   const { data: session, status } = useSession();
-  const role = normalizeRole((session?.user as any)?.role ?? "USER");
+  const role = normalizeRole((session?.user as any)?.role ?? "fan");
   const [contexts, setContexts] = useState<UserContext[]>([]);
   const [currentContext, setCurrentContext] = useState<UserContext | null>(null);
   const [schoolBranding, setSchoolBranding] = useState<{

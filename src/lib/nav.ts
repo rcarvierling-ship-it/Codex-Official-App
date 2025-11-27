@@ -37,10 +37,18 @@ const PATH_LABELS: Record<string, string> = {
   "/venues": "Venues",
   "/profile": "Profile",
   "/payments": "Payments",
+  "/dashboard/league": "League Dashboard",
+  "/dashboard/school": "School Dashboard",
+  "/dashboard/coach": "Coach Dashboard",
+  "/dashboard/official": "Official Dashboard",
+  "/dashboard/fan": "Fan Dashboard",
+  "/standings": "Standings",
+  "/browser": "Browse",
 };
 
 const ROLE_NAV_PATHS: Record<Role, string[]> = {
   league_admin: [
+    "/dashboard/league",
     "/admin",
     "/admin/leagues",
     "/admin/schools",
@@ -63,6 +71,7 @@ const ROLE_NAV_PATHS: Record<Role, string[]> = {
     "/test",
   ],
   school_admin: [
+    "/dashboard/school",
     "/admin",
     "/events",
     "/teams",
@@ -79,6 +88,7 @@ const ROLE_NAV_PATHS: Record<Role, string[]> = {
     "/activity",
   ],
   athletic_director: [
+    "/dashboard/school",
     "/admin",
     "/events",
     "/requests",
@@ -89,12 +99,14 @@ const ROLE_NAV_PATHS: Record<Role, string[]> = {
     "/payments",
   ],
   coach: [
+    "/dashboard/coach",
     "/admin",
     "/events",
     "/requests",
     "/teams",
   ],
   official: [
+    "/dashboard/official",
     "/admin",
     "/events",
     "/requests",
@@ -103,9 +115,11 @@ const ROLE_NAV_PATHS: Record<Role, string[]> = {
     "/profile",
   ],
   fan: [
-    "/admin",
+    "/dashboard/fan",
     "/events",
     "/announcements",
+    "/standings",
+    "/browser",
   ],
 };
 

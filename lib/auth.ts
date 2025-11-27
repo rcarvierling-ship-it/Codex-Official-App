@@ -63,7 +63,7 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             name: user.name || email.split("@")[0],
             email: user.email,
-            role: user.role || "USER",
+            role: user.role || "fan",
           } as any;
         } catch (error) {
           console.error("[auth] authorize error:", error);
@@ -73,19 +73,35 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }: any) {
+    async jwt({ token, user, trigger }: any) {
       if (user) {
         // @ts-ignore augment token with role and id
-        token.role = (user as any).role ?? token.role ?? "USER";
+        token.role = (user as any).role ?? token.role ?? "fan";
         token.id = (user as any).id ?? token.id;
       }
+      
+      // Refresh role from database on every request to ensure it's up to date
+      // This is important after onboarding when role changes
+      if (token.id) {
+        try {
+          const { rows } = await sql<{ role: string | null }>`
+            SELECT role FROM users WHERE id = ${token.id} LIMIT 1
+          `;
+          if (rows.length > 0 && rows[0].role) {
+            token.role = rows[0].role;
+          }
+        } catch (error) {
+          console.warn("[auth] Failed to refresh role from database", error);
+        }
+      }
+      
       return token;
     },
     async session({ session, token }: any) {
       // @ts-ignore include role and id on session
       session.user = { 
         ...session.user, 
-        role: (token as any).role ?? "USER",
+        role: (token as any).role ?? "fan",
         id: (token as any).id ?? null,
       } as any;
       return session;

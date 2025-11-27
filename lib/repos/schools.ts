@@ -174,8 +174,9 @@ export async function getUserAccessibleSchoolsAndLeagues(
   email: string,
   role?: string | null
 ): Promise<{ schoolIds: string[]; leagueIds: string[] } | null> {
-  // SUPER_ADMIN and ADMIN see everything
-  if (role === "SUPER_ADMIN" || role === "ADMIN") {
+  // league_admin sees everything
+  const normalizedRole = role ? role.toLowerCase() : "";
+  if (normalizedRole === "league_admin") {
     return null;
   }
 

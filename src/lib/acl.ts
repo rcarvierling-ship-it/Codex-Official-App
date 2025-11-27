@@ -37,6 +37,14 @@ const PROTECTED_BASE_PATHS = Array.from(
     "/api-explorer",
     "/dev-tools",
     "/profile",
+    "/dashboard",
+    "/dashboard/league",
+    "/dashboard/school",
+    "/dashboard/coach",
+    "/dashboard/official",
+    "/dashboard/fan",
+    "/standings",
+    "/browser",
   ]),
 );
 
